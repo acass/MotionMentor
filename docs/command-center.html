@@ -387,28 +387,30 @@ meta: {
   lastUpdated: "2026-09-09",
   currentPhase: "Phase 4 — MVP Hardening & Validation",
   health: "At Risk",
-  healthWhy: "Phases 0–3 are built and the full capture-to-feedback pipeline runs end to end, with 48/48 automated tests passing. But three MVP exit conditions are measurably unmet: every expert reference profile was built from a single demonstration (the PRD requires five), the smoothness component scores 0.0 on 19 of 21 recorded assessments, and 6 of 12 captures fall below the 90% hand-detection floor. The scores the system currently produces are not yet trustworthy.",
+  healthWhy: "Phases 0–3 are built and the full capture-to-feedback pipeline runs end to end, with 53/53 automated tests passing. The MVP exit conditions are still measurably unmet: the two most recent expert reference profiles use three takes each and none yet reaches the five the PRD requires, the smoothness component still scores 0.0 on 24 of 38 recorded assessments, and 17 of 22 captures fall below the 90% hand-detection floor. The scores the system currently produces are not yet trustworthy.",
   objective: "Make the existing pipeline's scores defensible: multi-take expert references, a working smoothness component, and capture quality above the 90% coverage gate.",
   nextMilestone: "MVP — Definition of Done (PRD §21)",
-  repo: "/Users/allencass/Desktop/MotionMentor · branch main · 8 commits",
+  repo: "/Users/allencass/Desktop/MotionMentor · branch main · 12 commits",
   platform: "Local desktop, single USB camera · Python 3.11–3.12 · no XR, no GPU, no cloud",
   sources: [
     "PRD.md (952 lines, header reads Status: Ready for prototype development)",
     "README.md, configs/default.yaml, configs/activities/reach_and_pinch.yaml",
     "src/motion_mentor/ — 8 subpackages read in full",
-    "tests/ — 15 files, 48 tests, executed 2026-09-09",
-    "data/motion_mentor.db — 12 sessions, 3 reference profiles, 21 assessment results",
-    "git log — 8 commits, all authored 2026-09-09 by Allen Cass"
+    "tests/ — 16 files, 53 tests, executed 2026-09-09",
+    "data/motion_mentor.db — 22 sessions (7 expert, 15 trainee), 5 reference profiles, 38 assessment results",
+    "git log — 12 commits, all authored 2026-09-09 by Allen Cass"
   ],
   recentWins: [
     { text: "Constrained DTW alignment, tolerance envelopes, component scoring and the ranked feedback generator all landed and are unit-tested.", evi: "commit 378ea67 · comparison/*.py · tests/test_scoring.py, test_dtw.py, test_feedback.py" },
     { text: "Interactive web dashboard with synchronized expert/trainee video, ghost-skeleton overlay and a REST API.", evi: "commit 2e344ff · server.py · web/index.html, app.js" },
     { text: "Browser-based recording with cross-platform ffmpeg transcoding, so a session can be captured without the CLI.", evi: "commit 0053c85 · server.py:223 /api/record_upload" },
     { text: "Repository consolidated — loose scripts folded into the package as comparison/pipeline.py and reporting/plots.py.", evi: "commit 8f621c8" },
-    { text: "Full suite green: 48 of 48 tests pass in 3.05s.", evi: "pytest run 2026-09-09" }
+    { text: "Dashboard can now record expert takes directly, and the reference builder prefers real recorded captures over seeded data.", evi: "commits c046f36, 325072e · server.py · web/app.js · tests/test_expert_reference_workflow.py (393 lines)" },
+    { text: "First multi-take expert references built from real recordings — the two newest profiles use 3 expert takes each (still short of the required 5).", evi: "reference_profiles: 2 rows with total_demonstrations = 3, built 2026-09-09 21:05–21:09" },
+    { text: "Full suite green: 53 of 53 tests pass in ~2.0s.", evi: "pytest run 2026-09-09" }
   ],
   nextActions: [
-    "Record at least five expert takes of reach_and_pinch and rebuild the reference profile from them (HRD-02 → HRD-03).",
+    "Record two or more further expert takes that clear the 90% gate — 3 of 7 recorded so far pass — and rebuild the reference from at least five (HRD-02 → HRD-03).",
     "Diagnose why the smoothness component returns 0.0 — inspect jerk features feeding scoring.py before changing the score mapping (HRD-01).",
     "Re-run the seeded-error validation protocol from PRD §22 once a multi-take reference exists; this is the project's first real proof of correctness (HRD-06).",
     "Fix capture conditions until coverage clears 90% on ten consecutive recordings (HRD-05).",
@@ -423,21 +425,21 @@ phases: [
     start:"2026-09-09", end:"2026-09-09", endAssumed:false,
     entry:["A USB camera and a stable mount are available.","MediaPipe runs on the development machine."],
     exit:[
-      {t:"At least 90% of relevant frames contain the expected hand.", met:false, evi:"6 of 12 sessions fail: 0.0%, 58.7%, 65.1%, 72.7%, 83.3%, 84.7% (data/motion_mentor.db)"},
-      {t:"Median processing rate is at least 24 FPS on the target computer.", met:true, evi:"effective FPS 30.0–30.4 on real captures"},
+      {t:"At least 90% of relevant frames contain the expected hand.", met:false, evi:"17 of 22 sessions fail, as low as 51.3%; only 3 expert takes and 2 trainee sessions clear the gate (data/motion_mentor.db)"},
+      {t:"Median processing rate is at least 24 FPS on the target computer.", met:true, evi:"live captures hold 30.0–30.4 FPS; ~6 browser-upload sessions transcode at ~15 FPS effective"},
       {t:"No persistent left/right hand identity swaps during the benchmark action.", met:null, evi:"Not measured — no test or recorded observation"},
       {t:"Repeated recordings produce visually stable landmark trajectories.", met:null, evi:"Not measured"}
     ],
     deliverables:["Camera enumeration and configuration","Live skeleton overlay + HUD telemetry","Synchronized video + landmark recording","Capture-quality report","Benchmark action: reach_and_pinch"],
     deps:[],
-    blockers:["ISS-05 — hand-detection coverage below the 90% gate on half of all recorded sessions"] },
+    blockers:["ISS-05 — hand-detection coverage below the 90% gate on 17 of 22 recorded sessions"] },
 
   { id:"p1", num:"P1", name:"Recording, Storage & Replay", status:"Complete",
     purpose:"Build a reliable data-acquisition pipeline for expert and trainee recordings.",
     start:"2026-09-09", end:"2026-09-09", endAssumed:false,
     entry:["Phase 0 capture path works end to end."],
     exit:[
-      {t:"A user can record and replay at least ten sessions without data corruption.", met:true, evi:"12 sessions recorded and readable in data/motion_mentor.db + data/recordings/"},
+      {t:"A user can record and replay at least ten sessions without data corruption.", met:true, evi:"22 sessions recorded and readable in data/motion_mentor.db + data/recordings/"},
       {t:"Video and landmark timelines remain synchronized within one frame.", met:true, evi:"Shared monotonic timestamp per frame — capture/recorder.py:92; verified in tests/test_capture_and_record.py"},
       {t:"Raw and processed landmarks are independently accessible.", met:true, evi:"data/landmarks/*.parquet vs data/features/*.parquet"},
       {t:"Invalid or low-confidence intervals are visible during replay.", met:true, evi:"HUD + reliability field surfaced in web deck"}
@@ -465,7 +467,7 @@ phases: [
     entry:["Scoring pipeline returns component scores and feedback."],
     exit:[
       {t:"A new user can complete a recording and understand the result without developer assistance.", met:null, evi:"Not measured — no usability session recorded"},
-      {t:"Feedback points to a specific time range and measurable deviation.", met:true, evi:"feedback items carry time_sec and measured_deviation — 21 rows in assessment_results"},
+      {t:"Feedback points to a specific time range and measurable deviation.", met:true, evi:"feedback items carry time_sec and measured_deviation — 38 rows in assessment_results"},
       {t:"The user can replay the exact segment associated with each correction.", met:true, evi:"web/app.js master scrubber + phase markers"},
       {t:"Historical results remain reproducible after reference profiles are updated.", met:true, evi:"Each assessment stores its reference_profile_id and scoring_version"}
     ],
@@ -479,15 +481,15 @@ phases: [
     start:"2026-09-09", end:"2026-10-07", endAssumed:true,
     entry:["Phases 0–3 built and running end to end."],
     exit:[
-      {t:"At least five expert demonstrations recorded and a reference profile built from all of them.", met:false, evi:"All 3 profiles show total_demonstrations = 1"},
-      {t:"Smoothness component returns a meaningful non-zero score.", met:false, evi:"smoothness = 0.0 in 19 of 21 assessments"},
-      {t:"Ten consecutive captures clear the 90% detection-coverage gate.", met:false, evi:"6 of 12 recorded sessions fail the gate"},
+      {t:"At least five expert demonstrations recorded and a reference profile built from all of them.", met:false, evi:"Best profile uses 3 takes; of 5 profiles, 3 are still single-take"},
+      {t:"Smoothness component returns a meaningful non-zero score.", met:false, evi:"smoothness = 0.0 in 24 of 38 assessments (mean 28.1)"},
+      {t:"Ten consecutive captures clear the 90% detection-coverage gate.", met:false, evi:"17 of 22 recorded sessions fail the gate"},
       {t:"The PRD §22 seeded-error experiment ranks the seeded errors into the correct components.", met:false, evi:"Not run"},
-      {t:"Deviation magnitudes are on a defensible scale.", met:false, evi:"Observed z-scores of 96.7σ and 642.0σ in stored feedback"}
+      {t:"Deviation magnitudes are on a defensible scale.", met:false, evi:"Observed z-scores up to 642.0σ in stored feedback"}
     ],
     deliverables:["Multi-take expert reference","Smoothness component fix","Capture-quality remediation","Seeded-error validation report","Reliability-gating review"],
     deps:["p3"],
-    blockers:["ISS-02 blocks HRD-03 and HRD-06 — no multi-take reference exists yet"],
+    blockers:["ISS-02 partly cleared — a 3-take reference now exists, but HRD-03 and HRD-06 still need five takes"],
     assumed:true },
 
   { id:"p5", num:"P5", name:"Task Stages, Tools & Object Context", status:"Not Started",
@@ -537,15 +539,15 @@ milestones: [
   { id:"M1", name:"Session recording, storage & replay", phase:"p1", effort:"1–2 weeks",
     target:"2026-09-09", targetAssumed:false, actual:"2026-09-09", status:"Complete", confidence:"Confirmed",
     variance:"Ahead of the 1–2 week estimate", deps:["M0"],
-    note:"12 sessions recorded and replayable. Evidence: data/motion_mentor.db, data/recordings/." },
+    note:"22 sessions recorded and replayable. Evidence: data/motion_mentor.db, data/recordings/." },
   { id:"M2", name:"Normalization, features, DTW & baseline scoring", phase:"p2", effort:"2–3 weeks",
     target:"2026-09-09", targetAssumed:false, actual:"2026-09-09", status:"Complete", confidence:"Confirmed",
     variance:"Ahead of the 2–3 week estimate", deps:["M1"],
-    note:"Commits 0b7bc22 and 378ea67. 21 assessments produced." },
+    note:"Commits 0b7bc22 and 378ea67. 38 assessments produced." },
   { id:"M3", name:"Expert reference builder & feedback visualization", phase:"p2", effort:"2–3 weeks",
     target:"2026-09-09", targetAssumed:false, actual:"2026-09-09", status:"Complete", confidence:"Confirmed",
     variance:"Ahead of estimate", deps:["M2"],
-    note:"Builder works, but every profile it has produced so far used a single take. The variability envelope it is designed to compute has never actually been exercised." },
+    note:"Builder works and has now produced two 3-take profiles from real recordings. The variability envelope is being exercised, but never yet at the five takes the PRD requires." },
   { id:"M4", name:"Training interface & performance history", phase:"p3", effort:"2–3 weeks",
     target:"2026-09-09", targetAssumed:false, actual:"2026-09-09", status:"Complete", confidence:"Confirmed",
     variance:"Ahead of estimate", deps:["M3"],
@@ -602,7 +604,7 @@ workItems: [
   { id:"CAP-05", t:"Capture-quality diagnostics", s:"capture", p:"p0", pri:"High", st:"Complete", upd:"2026-09-09",
     d:"Evaluate each session against thresholds: ≥90% hand coverage, ≥24 median FPS, ≤45 ms p95 latency, with human-readable failure reasons.",
     ac:["Every session gets a quality summary persisted with it.","Failures name the specific threshold missed."],
-    deps:["CAP-03"], evi:["reporting/quality.py:14 QualityEvaluator","tests/test_quality_report.py","quality_summary_json on all 12 sessions"],
+    deps:["CAP-03"], evi:["reporting/quality.py:14 QualityEvaluator","tests/test_quality_report.py","quality_summary_json on all 22 sessions"],
     n:"The evaluator works correctly — it is what surfaced ISS-05." },
   { id:"CAP-06", t:"Synchronized MP4 + landmark recording", s:"capture", p:"p1", pri:"Critical", st:"Complete", upd:"2026-09-09",
     d:"Write video and landmark parquet under one session ID, with an avc1→mp4v codec fallback and optional ffmpeg faststart re-mux.",
@@ -651,7 +653,7 @@ workItems: [
     d:"Pairwise-DTW medoid selection across expert takes, warping every take onto the medoid grid before building the profile.",
     ac:["Multiple takes reduce to one canonical grid.","Profile is persisted and versioned."],
     deps:["CMP-01"], evi:["comparison/reference.py:51 ReferenceProfileBuilder","tests/test_reference.py — 3 tests"],
-    n:"Multi-take selection is unit-tested but has never run on real data — all 3 stored profiles used one take (ISS-02)." },
+    n:"Multi-take selection has now run on real data — the two newest of 5 stored profiles use 3 takes; the other 3 used one (ISS-02)." },
   { id:"CMP-03", t:"Variability envelope & minimum tolerances", s:"scoring", p:"p2", pri:"Critical", st:"Complete", upd:"2026-09-09",
     d:"Mean and standard deviation per feature across expert takes, clamped by a per-feature minimum tolerance so a near-zero spread cannot explode the z-score.",
     ac:["Envelope computed per feature.","A floor prevents division by a vanishing standard deviation."],
@@ -660,17 +662,17 @@ workItems: [
   { id:"CMP-04", t:"Component scoring & reliability gating", s:"scoring", p:"p2", pri:"Critical", st:"Complete", upd:"2026-09-09",
     d:"Six weighted components — pose, trajectory, orientation, timing, smoothness, sequence — mapped from z-score to 0–100 by exponential decay, with a reliability grade attached.",
     ac:["Components are independently accessible.","Weights are configurable per activity and total 100%."],
-    deps:["CMP-03"], evi:["comparison/scoring.py:47 ScoringEngine","tests/test_scoring.py — 6 tests","21 rows in assessment_results"],
-    n:"Smoothness returns 0.0 on 19 of 21 real assessments despite the unit tests passing (ISS-01)." },
+    deps:["CMP-03"], evi:["comparison/scoring.py:47 ScoringEngine","tests/test_scoring.py — 6 tests","38 rows in assessment_results"],
+    n:"Smoothness returns 0.0 on 24 of 38 real assessments despite the unit tests passing (ISS-01)." },
   { id:"CMP-05", t:"Required checkpoint evaluation & score capping", s:"scoring", p:"p2", pri:"High", st:"Complete", upd:"2026-09-09",
     d:"Evaluate the activity's declared checkpoints; a missed critical checkpoint caps the overall score regardless of motion similarity.",
     ac:["Critical checkpoint failure caps the score.","Checkpoints are declared in activity config, not code."],
     deps:["CMP-04"], evi:["comparison/scoring.py:180","configs/activities/reach_and_pinch.yaml — 3 checkpoints, 2 critical","tests/test_scoring.py"],
-    n:"No stored assessment has yet recorded a critical failure — critical_failures_json is empty on all 21." },
+    n:"One stored assessment now records a critical failure (\"90 Degree Wrist Rotation\"); critical_failures_json is empty on the other 37." },
   { id:"CMP-06", t:"Ranked plain-language feedback generator", s:"scoring", p:"p2", pri:"High", st:"Complete", upd:"2026-09-09",
     d:"Critical failures first, then the top three z-ranked deviations, each with a peak-error timestamp, a measured deviation and a recommendation.",
     ac:["At least three deviations surfaced.","Each item names a time and a measurable deviation."],
-    deps:["CMP-05"], evi:["comparison/feedback.py:32","tests/test_feedback.py — 3 tests","feedback_json on 21 assessments"],
+    deps:["CMP-05"], evi:["comparison/feedback.py:32","tests/test_feedback.py — 3 tests","feedback_json on 38 assessments"],
     n:"Messages are readable, but the deviation magnitudes they quote are currently not credible (ISS-03)." },
   { id:"CMP-07", t:"End-to-end comparison pipeline", s:"scoring", p:"p2", pri:"Critical", st:"Complete", upd:"2026-09-09",
     d:"One orchestrator: load or derive the reference, extract trainee features, align, score, generate feedback, band the result, persist the assessment.",
@@ -723,39 +725,39 @@ workItems: [
 
   /* --- Phase 4: hardening -------------------------------------------------- */
   { id:"HRD-01", t:"Smoothness component returns 0.0 on real assessments", s:"scoring", p:"p4", pri:"Critical", st:"Ready", upd:"2026-09-09",
-    d:"Nineteen of 21 stored assessments score smoothness exactly 0.0, including runs that score 100 on pose, trajectory and orientation. A component weighted at 10% is contributing nothing but a constant penalty.",
+    d:"Twenty-four of 38 stored assessments score smoothness exactly 0.0, including runs that score 100 on pose, trajectory and orientation. A component weighted at 10% is contributing nothing but a constant penalty on most assessments.",
     ac:["Root cause identified in the jerk feature path or the z-score mapping, not patched at the score output.","A known-smooth attempt scores meaningfully above a known-jerky one.","A regression test covers the case."],
-    deps:[], evi:["component_scores_json across 21 rows in assessment_results","processing/features.py:117 kinematics","comparison/scoring.py:29"],
+    deps:[], evi:["component_scores_json across 38 rows in assessment_results","processing/features.py:117 kinematics","comparison/scoring.py:29"],
     n:"Unit tests in test_scoring.py pass, so the defect is in the data reaching the scorer, not the scorer's arithmetic. Start at REP-05." },
   { id:"HRD-02", t:"Record five or more expert demonstrations of reach_and_pinch", s:"capture", p:"p4", pri:"Critical", st:"Ready", upd:"2026-09-09",
-    d:"The PRD MVP Definition of Done requires at least five expert demonstrations. Every reference built so far used one.",
+    d:"The PRD MVP Definition of Done requires at least five expert demonstrations. The best reference so far uses three; 7 expert takes are recorded but only 3 clear the 90% gate.",
     ac:["At least five expert takes recorded.","Each take clears the 90% coverage gate.","Takes are recorded under consistent camera placement."],
-    deps:["HRD-05"], evi:["reference_profiles.total_demonstrations = 1 on all 3 rows"],
+    deps:["HRD-05"], evi:["reference_profiles.total_demonstrations peaks at 3 (2 of 5 rows); 3 rows still = 1","7 expert sessions, coverage 0.0–100%"],
     n:"This is the single highest-leverage item on the board — it unblocks HRD-03 and HRD-06 and is a hard MVP gate." },
   { id:"HRD-03", t:"Rebuild reference profile from a multi-take variability envelope", s:"scoring", p:"p4", pri:"Critical", st:"Blocked", upd:"2026-09-09", last:5,
     d:"Run the existing medoid builder over the five-plus takes so the tolerance envelope reflects real expert variation rather than a floor value.",
     ac:["A profile exists with total_demonstrations ≥ 5.","Per-feature standard deviation is non-degenerate.","Prior assessments remain reproducible against their original profile."],
-    deps:["HRD-02"], evi:["comparison/reference.py:62 build_profile"],
-    n:"Blocked on HRD-02. The builder code is finished and unit-tested; only the input data is missing." },
+    deps:["HRD-02"], evi:["comparison/reference.py:62 build_profile","reference_profiles e32a3c53, a6b78632 — total_demonstrations = 3"],
+    n:"Partly exercised — a 3-take profile now exists. Still blocked on HRD-02 for the required five takes." },
   { id:"HRD-04", t:"Deviation z-scores reach 642σ — fix the reported scale", s:"scoring", p:"p4", pri:"High", st:"Ready", upd:"2026-09-09",
     d:"Stored feedback quotes deviations of 96.7σ and 642.0σ. Whatever the underlying error, a sigma figure in the hundreds is not something a trainee or an instructor can act on.",
     ac:["Deviation magnitudes are bounded or expressed in physical units.","Feedback text quotes a figure a human can reason about."],
     deps:["HRD-03"], evi:["feedback_json — \"Deviation: 2947.5 (642.0σ)\"","comparison/reference.py:36 tolerance floor"],
     n:"Likely a symptom of the single-take envelope, not an independent defect — recheck after HRD-03 before changing scoring code." },
   { id:"HRD-05", t:"Raise capture coverage above the 90% gate", s:"capture", p:"p4", pri:"High", st:"Ready", upd:"2026-09-09",
-    d:"Six of twelve sessions fall below the Phase 0 detection-coverage floor, as low as 58.7%. Until capture is reliable, no score built on it means anything.",
+    d:"Seventeen of 22 sessions fall below the Phase 0 detection-coverage floor, as low as 51.3%. Until capture is reliable, no score built on it means anything.",
     ac:["Ten consecutive recordings clear 90% coverage.","The physical setup that achieved it is documented."],
-    deps:[], evi:["detection_coverage_pct on 12 sessions: 0.0, 58.7, 65.1, 72.7, 83.3, 84.7 failing"],
+    deps:[], evi:["detection_coverage_pct on 22 sessions: 17 below 90%, ranging 51.3–85.3 (plus 2 synthetic 0.0 runs)"],
     n:"PRD §10 names the likely causes: lighting, glare, motion blur, and hands leaving the marked capture zone. Fix the room before the code." },
   { id:"HRD-06", t:"Run the PRD §22 seeded-error validation experiment", s:"test", p:"p4", pri:"Critical", st:"Blocked", upd:"2026-09-09", last:0,
     d:"One expert performs the same five-second movement ten times, plus attempts at half and faster speed, incorrect wrist rotation, incorrect trajectory, and an omitted final pose. The system passes if it tolerates the speed changes while ranking each seeded error into the right component.",
     ac:["All named variants recorded.","Speed variants do not substantially lower pose or trajectory scores.","Each seeded error is ranked into its intended component."],
     deps:["HRD-03"], evi:["PRD §22 first development experiment"],
     n:"This is the project's first genuine proof that the scoring means anything. Nothing downstream should be trusted before it runs." },
-  { id:"HRD-07", t:"Review reliability gating — 17 of 21 assessments read low", s:"scoring", p:"p4", pri:"High", st:"Ready", upd:"2026-09-09",
+  { id:"HRD-07", t:"Review reliability gating — 32 of 38 assessments read low", s:"scoring", p:"p4", pri:"High", st:"Ready", upd:"2026-09-09",
     d:"Most stored assessments carry reliability \"low\", yet still report a headline score. The PRD is explicit: never report a normal score when required evidence is missing.",
     ac:["Low reliability visibly suppresses or qualifies the headline score.","The threshold is justified against measured coverage."],
-    deps:["HRD-05"], evi:["reliability on 21 rows: 17 low, 4 high","PRD §15 reliability requirement"], n:"" },
+    deps:["HRD-05"], evi:["reliability on 38 rows: 32 low, 6 high","PRD §15 reliability requirement"], n:"" },
   { id:"HRD-08", t:"Decouple test_server.py from the live data directory", s:"test", p:"p4", pri:"Medium", st:"Ready", upd:"2026-09-09",
     d:"Seven server tests assert against whatever happens to be in data/. They pass only because the repository ships populated data; clearing it breaks the suite.",
     ac:["Server tests run green against an empty data directory.","Fixtures create their own sessions."],
@@ -947,19 +949,19 @@ requirements: [
   { id:"FR-3", d:"Recording — record expert and trainee sessions with monotonic timestamps and a shared session identifier; a recording failure must not silently produce a score.",
     type:"Functional", pri:"Critical", src:"PRD §11", comp:"capture/recorder.py", items:["CAP-06"],
     impl:"Implemented", val:"Automated test", test:"tests/test_capture_and_record.py",
-    evi:"SessionRecorder raises if neither codec opens; 12 sessions recorded with shared IDs across video, parquet and database." },
+    evi:"SessionRecorder raises if neither codec opens; 22 sessions recorded with shared IDs across video, parquet and database." },
   { id:"FR-4", d:"Reference management — include or exclude expert takes, display variability, and keep published profiles immutable so edits create a new version.",
     type:"Functional", pri:"Critical", src:"PRD §11", comp:"comparison/reference.py", items:["CMP-02","CMP-03","HRD-03"],
     impl:"Partial", val:"Automated test", test:"tests/test_reference.py",
-    evi:"Builder and versioning exist. Take inclusion/exclusion and variability display do not, and immutability enforcement is unverified. No profile has ever used more than one take." },
+    evi:"Builder and versioning exist. Take inclusion/exclusion and variability display do not, and immutability enforcement is unverified. Only the two most recent profiles use more than one take (three); none reaches the five the PRD requires." },
   { id:"FR-5", d:"Comparison — compare an attempt with the appropriate reference and return component scores, alignment, deviations, reliability and detected critical failures.",
     type:"Functional", pri:"Critical", src:"PRD §11", comp:"comparison/pipeline.py · scoring.py", items:["CMP-04","CMP-07"],
     impl:"Implemented", val:"Automated test", test:"tests/test_scoring.py · test_dtw.py",
-    evi:"21 assessments stored with all six components, reliability and an interpretation band. Note that the smoothness component is currently degenerate (ISS-01)." },
+    evi:"38 assessments stored with all six components, reliability and an interpretation band, including one recorded critical-checkpoint failure. Note that the smoothness component is still degenerate on most rows (ISS-01)." },
   { id:"FR-6", d:"Review — replay synchronized expert and trainee sequences, navigate from a feedback item to its interval, and distinguish tracking problems from performance errors.",
     type:"Functional", pri:"High", src:"PRD §11", comp:"web/app.js · server.py", items:["UI-02","UI-04"],
     impl:"Partial", val:"Manual inspection", test:"tests/test_server.py (API only)",
-    evi:"Synchronized replay and interval navigation work. The tracking-versus-performance distinction is carried only by a coarse reliability grade, which currently reads low on 17 of 21 assessments." },
+    evi:"Synchronized replay and interval navigation work. The tracking-versus-performance distinction is carried only by a coarse reliability grade, which currently reads low on 32 of 38 assessments." },
   { id:"FR-7", d:"Export — export landmarks, features, scores and summary results, including schema and algorithm versions.",
     type:"Functional", pri:"Medium", src:"PRD §11", comp:"storage/files.py:120", items:["DATA-02","HRD-12"],
     impl:"Needs confirmation", val:"Inspection", test:"tests/test_storage_files.py",
@@ -968,11 +970,11 @@ requirements: [
     comp:"configs/default.yaml · capture/camera.py", items:["CAP-02"], impl:"Implemented", val:"Measurement", test:"Capture-quality evaluator",
     evi:"Configured at 1280×720/30; measured effective FPS 30.0–30.4 on real captures." },
   { id:"NFR-P2", d:"Landmark processing of at least 24 FPS on the development machine.", type:"Performance", pri:"High", src:"PRD §15",
-    comp:"tracking/hand_tracker.py", items:["CAP-03","CAP-05"], impl:"Implemented", val:"Measurement", test:"quality_summary on 12 sessions",
-    evi:"Met on every real capture. One session measured 15.4 FPS with 70 dropped frames — a browser-upload run, not a direct capture." },
+    comp:"tracking/hand_tracker.py", items:["CAP-03","CAP-05"], impl:"Implemented", val:"Measurement", test:"quality_summary on 22 sessions",
+    evi:"Met on every direct capture (30 FPS). ~6 browser-upload runs measured ~15 FPS effective with dropped frames — a transcode artifact, not the live path." },
   { id:"NFR-P3", d:"Preview latency under 150 ms.", type:"Performance", pri:"Medium", src:"PRD §15",
-    comp:"tracking/hand_tracker.py:68", items:["CAP-03"], impl:"Implemented", val:"Measurement", test:"quality_summary on 12 sessions",
-    evi:"Median per-frame latency 12.0–22.3 ms; p95 up to 25.3 ms. Comfortably inside the target." },
+    comp:"tracking/hand_tracker.py:68", items:["CAP-03"], impl:"Implemented", val:"Measurement", test:"quality_summary on 22 sessions",
+    evi:"Median per-frame latency 9.8–24.8 ms across 22 sessions. Comfortably inside the target." },
   { id:"NFR-P4", d:"Post-session assessment under 5 seconds for a 10-second action.", type:"Performance", pri:"Medium", src:"PRD §15",
     comp:"comparison/pipeline.py", items:["HRD-15"], impl:"Not Implemented", val:"Measurement", test:null,
     evi:"Never measured. No timing is recorded on any assessment." },
@@ -995,7 +997,7 @@ requirements: [
     comp:"—", items:["HRD-13"], impl:"Not Implemented", val:"Inspection", test:null,
     evi:"No delete path exists in the database manager, the CLI or the API." },
   { id:"NFR-M1", d:"Separate UI, capture, processing, scoring and persistence; typed interfaces and Pydantic schemas throughout.", type:"Maintainability", pri:"Medium", src:"PRD §15",
-    comp:"src/motion_mentor/*", items:["REP-01","CMP-07"], impl:"Implemented", val:"Inspection", test:"48 tests across 15 files",
+    comp:"src/motion_mentor/*", items:["REP-01","CMP-07"], impl:"Implemented", val:"Inspection", test:"53 tests across 16 files",
     evi:"Eight subpackages with clean separation; all persisted structures are Pydantic models. Subpackages use implicit namespace packages (no __init__.py)." }
 ],
 
@@ -1033,20 +1035,23 @@ tests: [
   { id:"IT-03", n:"REST API surface", type:"Integration", req:"FR-6", env:"pytest + httpx TestClient",
     exp:"Activities, sessions, landmarks, references, assessments, video and static index all respond", act:"7 tests passed", st:"Passed", evi:"tests/test_server.py", date:"2026-09-09",
     note:"Asserts against the live data/ directory rather than fixtures — passes only because the repository ships populated data (ISS-07, HRD-08)." },
+  { id:"IT-04", n:"Expert-capture recording and reference-preference workflow", type:"Integration", req:"FR-4", env:"pytest + httpx TestClient",
+    exp:"Recording an expert take through the dashboard, then building a reference, prefers real recorded captures over seeded data", act:"5 tests passed", st:"Passed", evi:"tests/test_expert_reference_workflow.py", date:"2026-09-09",
+    note:"Added in commit 325072e. Covers the path that produced the first 3-take references." },
   { id:"HW-01", n:"MediaPipe inference on real frames", type:"Hardware / Model", req:"—", env:"pytest, MediaPipe 0.10.x",
     exp:"Inference runs and the skeleton draws without error", act:"2 tests passed", st:"Passed", evi:"tests/test_hand_tracker.py", date:"2026-09-09" },
-  { id:"HW-02", n:"Capture quality — hand-detection coverage across 12 recorded sessions", type:"Hardware / Field", req:"NFR-P2", env:"USB webcam, live capture",
-    exp:"≥90% of frames contain the expected hand", act:"6 of 12 sessions failed: 0.0%, 0.0%, 58.7%, 65.1%, 72.7%, 83.3%, 84.7% (two 0.0% runs are synthetic-camera sessions)", st:"Failed",
+  { id:"HW-02", n:"Capture quality — hand-detection coverage across 22 recorded sessions", type:"Hardware / Field", req:"NFR-P2", env:"USB webcam, live capture",
+    exp:"≥90% of frames contain the expected hand", act:"17 of 22 sessions failed, ranging 51.3%–85.3%, plus two synthetic-camera runs at 0.0%. Only 3 expert takes and 2 trainee sessions clear the gate.", st:"Failed",
     evi:"quality_summary_json, data/motion_mentor.db", date:"2026-09-09" },
   { id:"HW-03", n:"Capture throughput", type:"Hardware / Field", req:"NFR-P2", env:"USB webcam, live capture",
-    exp:"≥24 FPS median processing", act:"30.0–30.4 FPS on real captures; one browser-upload session at 15.4 FPS with 70 dropped frames", st:"Passed",
-    evi:"effective_fps across 12 sessions", date:"2026-09-09" },
+    exp:"≥24 FPS median processing", act:"Direct captures hold 30.0–30.4 FPS; ~6 browser-upload sessions transcode at ~15 FPS effective with dropped frames", st:"Passed",
+    evi:"effective_fps across 22 sessions", date:"2026-09-09" },
   { id:"HW-04", n:"Preview latency", type:"Hardware / Field", req:"NFR-P3", env:"USB webcam, live capture",
-    exp:"<150 ms", act:"Median 12.0–22.3 ms, p95 up to 25.3 ms", st:"Passed",
-    evi:"median_latency_ms / p95_latency_ms across 12 sessions", date:"2026-09-09" },
+    exp:"<150 ms", act:"Median 9.8–24.8 ms across 22 sessions", st:"Passed",
+    evi:"median_latency_ms / p95_latency_ms across 22 sessions", date:"2026-09-09" },
   { id:"VAL-01", n:"Seeded-error validation protocol (PRD §22)", type:"Model evaluation", req:"FR-5", env:"One expert, ten repeats plus five seeded variants",
     exp:"Speed variants do not substantially lower pose or trajectory scores; each seeded error ranks into its intended component", act:"Not run", st:"Not Run",
-    evi:"Blocked on HRD-03 — no multi-take reference exists", date:null,
+    evi:"Blocked on HRD-03 — the reference now uses 3 takes, still short of five", date:null,
     note:"This is the single most important untested item on the project. Nothing about scoring correctness is currently proven against real data." },
   { id:"VAL-02", n:"Assessment latency for a 10-second action", type:"Performance", req:"NFR-P4", env:"Local desktop",
     exp:"<5 seconds", act:"Not measured", st:"Not Run", evi:"HRD-15", date:null },
@@ -1080,7 +1085,7 @@ risks: [
     impact:"Brittle scoring",
     mit:"Use multiple expert takes and variability envelopes",
     owner:"Allen Cass", st:"Realized", rel:"ISS-02 · HRD-02 · HRD-03", found:"2026-09-09",
-    res:"This risk has already occurred. All three stored reference profiles were built from one take.", assumed:true },
+    res:"This risk has already occurred. Three of five stored reference profiles were built from one take; the two newest use three takes, still short of the five the PRD requires.", assumed:true },
   { id:"R-05", d:"Estimated monocular depth is unstable", cat:"Technical", prob:"Medium", imp:"Medium",
     impact:"Incorrect 3D conclusions",
     mit:"Favor normalized angles and relative geometry; calibrate the workspace; add RGB-D later",
@@ -1116,26 +1121,26 @@ risks: [
 /* Observed defects and gaps, each traceable to a file, a test, or a database
    row. Distinct from risks: these have already happened.                      */
 issues: [
-  { id:"ISS-01", d:"Smoothness component scores exactly 0.0 on 19 of 21 stored assessments, including runs scoring 100 on pose, trajectory and orientation.",
+  { id:"ISS-01", d:"Smoothness component scores exactly 0.0 on 24 of 38 stored assessments, including runs scoring 100 on pose, trajectory and orientation.",
     cat:"Scoring", sev:"Critical", st:"Open", owner:"Allen Cass", rel:"HRD-01 · CMP-04 · REP-05",
     found:"2026-09-09", evi:"component_scores_json across assessment_results", res:null,
     why:"A component carrying 10% of the weight is contributing a flat penalty to every score. Unit tests pass, so the fault is in the feature data reaching the scorer." },
-  { id:"ISS-02", d:"Every reference profile was built from a single expert demonstration. The PRD MVP Definition of Done requires at least five.",
+  { id:"ISS-02", d:"Most reference profiles were built from a single expert demonstration; the two most recent use three takes. The PRD MVP Definition of Done requires at least five.",
     cat:"Data", sev:"Critical", st:"Open", owner:"Allen Cass", rel:"HRD-02 · HRD-03 · R-04",
-    found:"2026-09-09", evi:"reference_profiles.total_demonstrations = 1 on all 3 rows", res:null,
-    why:"The variability envelope the whole scoring model rests on has never been computed from real variation. This blocks the MVP milestone and the validation experiment." },
+    found:"2026-09-09", evi:"reference_profiles.total_demonstrations = 1 on 3 of 5 rows, = 3 on the two newest", res:null,
+    why:"The variability envelope the whole scoring model rests on has only been computed from three takes, none of them a full five. This still blocks the MVP milestone and the validation experiment." },
   { id:"ISS-03", d:"Stored feedback quotes deviation magnitudes of 96.7σ and 642.0σ.",
     cat:"Scoring", sev:"High", st:"Open", owner:"Allen Cass", rel:"HRD-04 · CMP-03",
     found:"2026-09-09", evi:"feedback_json — \"Deviation: 2947.5 (642.0σ)\"", res:null,
     why:"Consistent with dividing by a near-zero standard deviation from a single-take envelope. Recheck after ISS-02 is fixed rather than patching the scoring code first." },
-  { id:"ISS-04", d:"Seventeen of 21 assessments carry reliability \"low\" but still report a headline score.",
+  { id:"ISS-04", d:"Thirty-two of 38 assessments carry reliability \"low\" but still report a headline score.",
     cat:"Scoring", sev:"High", st:"Open", owner:"Allen Cass", rel:"HRD-07",
     found:"2026-09-09", evi:"reliability column across assessment_results", res:null,
     why:"PRD §15 is explicit: never report a normal score when required evidence is missing. The system currently does." },
-  { id:"ISS-05", d:"Hand-detection coverage falls below the 90% gate on six of twelve recorded sessions, as low as 58.7%.",
+  { id:"ISS-05", d:"Hand-detection coverage falls below the 90% gate on 17 of 22 recorded sessions, as low as 51.3%.",
     cat:"Capture", sev:"High", st:"Open", owner:"Allen Cass", rel:"HRD-05 · R-01 · R-02",
-    found:"2026-09-09", evi:"detection_coverage_pct across 12 sessions", res:null,
-    why:"Phase 0's primary exit criterion. Two of the failing sessions used the synthetic camera and should be discounted; four are genuine capture failures." },
+    found:"2026-09-09", evi:"detection_coverage_pct across 22 sessions", res:null,
+    why:"Phase 0's primary exit criterion, and it has widened as more sessions were recorded. Two failing sessions used the synthetic camera and should be discounted; 15 are genuine capture failures." },
   { id:"ISS-06", d:"CORS is configured with allow_origins=[\"*\"] and allow_credentials=True on the server that streams recorded hand video.",
     cat:"Security", sev:"Medium", st:"Open", owner:"Allen Cass", rel:"HRD-09",
     found:"2026-09-09", evi:"server.py:29-34", res:null,
@@ -1232,6 +1237,14 @@ decisions: [
 /* Append new entries at the top. Never overwrite an entry — a correction is a
    new entry that states what changed and why.                                 */
 activity: [
+  { ts:"2026-09-09 · data refresh", src:"Runtime database + git log re-read (12 commits, 2026-09-09)",
+    sum:"Refreshed every count against the live database and commit history. Dashboard structure unchanged; evidence figures updated.",
+    added:"commits c046f36, 325072e, 88d2efa, 35810b8 · tests/test_expert_reference_workflow.py (5 tests) · test record IT-04",
+    changed:"sessions 12 → 22 · reference profiles 3 → 5 · assessments 21 → 38 · tests 48 → 53 · smoothness-zero 19/21 → 24/38 · coverage failures 6/12 → 17/22 · reliability-low 17/21 → 32/38",
+    done:"First multi-take expert references built from real recordings (3 takes each); first recorded critical-checkpoint failure (90 Degree Wrist Rotation)",
+    blockers:"ISS-05 widened — 17 of 22 captures now below the 90% coverage gate; HRD-02/HRD-03 still need five expert takes",
+    dec:"None",
+    prog:"Evidence updated; no phase status change" },
   { ts:"2026-09-09 · dashboard created", src:"Repository analysis — PRD, source tree, test run, runtime database",
     sum:"Command center established as the authoritative project snapshot. Seeded entirely from repository evidence.",
     added:"8 phases, 8 milestones, 58 work items, 18 requirements, 23 test records, 10 risks, 8 issues, 9 decisions",
@@ -1490,8 +1503,8 @@ function viewOverview() {
       <span class="note">${c.Complete} of ${PROJECT.workItems.length} work items complete</span></div>
     <div class="metric"><span class="lab">Phases built</span><span class="val">4<span style="font-size:.9rem;color:var(--ink-3)"> / 8</span></span>
       <span class="note">P0–P3 delivered; P0 exit criteria unmet</span></div>
-    <div class="metric"><span class="lab">Automated tests</span><span class="val">48<span style="font-size:.9rem;color:var(--ink-3)"> / 48</span></span>
-      <span class="note">All passing · 15 files · 3.05s</span></div>
+    <div class="metric"><span class="lab">Automated tests</span><span class="val">53<span style="font-size:.9rem;color:var(--ink-3)"> / 53</span></span>
+      <span class="note">All passing · 16 files · ~2.0s</span></div>
     <div class="metric"><span class="lab">Open issues</span><span class="val">${PROJECT.issues.filter(i => i.st === "Open").length}</span>
       <span class="note">${PROJECT.issues.filter(i => i.sev === "Critical").length} critical</span></div>
     <div class="metric"><span class="lab">Blocked items</span><span class="val">${c.Blocked}</span>
@@ -1880,13 +1893,13 @@ function viewTesting() {
   </div>
 
   <div class="metrics">
-    <div class="metric"><span class="lab">Automated tests</span><span class="val">48</span><span class="note">15 files, executed 2026-09-09 in 3.05s</span></div>
+    <div class="metric"><span class="lab">Automated tests</span><span class="val">53</span><span class="note">16 files, executed 2026-09-09 in ~2.0s</span></div>
     <div class="metric"><span class="lab">Pass rate (executed)</span><span class="val">${rate}%</span><span class="note">${pass} passed · ${fail} failed of ${pass + fail} executed records</span></div>
     <div class="metric"><span class="lab">Never run</span><span class="val">${notrun}</span><span class="note">Including the validation experiment the MVP depends on</span></div>
     <div class="metric"><span class="lab">Untested critical requirements</span><span class="val">${criticalUntested.length}</span><span class="note">${criticalUntested.length ? esc(j(criticalUntested, ", ")) : "None — every critical requirement has a test"}</span></div>
   </div>
 
-  <div class="note-band warn">The one failure below is a field measurement, not a broken test: hand-detection coverage misses the 90% gate on six of twelve recorded sessions. It is the reason Phase 0 is still At Risk after the code was written.</div>
+  <div class="note-band warn">The one failure below is a field measurement, not a broken test: hand-detection coverage misses the 90% gate on 17 of 22 recorded sessions. It is the reason Phase 0 is still At Risk after the code was written.</div>
 
   ${j(Object.keys(byType).map(type => `
     <div class="section">
@@ -2079,7 +2092,7 @@ function viewStakeholder() {
       <h2>Where it stands today</h2>
       <div class="chipline">${badge(m.health)}<span class="chip">${esc(m.currentPhase)}</span><span class="chip">${pct(op)} of planned work complete</span></div>
       <p>The system works end to end. You can record an expert, record a trainee, and get back a score with specific, timestamped coaching points and a side-by-side video replay. Every automated test passes.</p>
-      <p>What is not yet true is that the scores can be trusted. The expert benchmark was built from a single demonstration rather than the five the plan calls for, one of the six scoring components is not functioning, and half the recordings so far did not track the hand reliably enough to score. Until those are fixed, the numbers the system produces are provisional.</p>
+      <p>What is not yet true is that the scores can be trusted. The expert benchmark is now built from three demonstrations rather than the five the plan calls for, one of the six scoring components is still not functioning on most attempts, and most of the recordings so far did not track the hand reliably enough to score. Until those are fixed, the numbers the system produces are provisional.</p>
     </div>
     <hr class="rule">
     <div class="section">
@@ -2110,8 +2123,8 @@ function viewStakeholder() {
       <div class="section">
         <h2>Main risks</h2>
         <ul class="tight small">
-          <li><strong>The expert benchmark rests on one recording.</strong> Everything the system judges is measured against it, so it has to represent how the task is really done — not one particular attempt.</li>
-          <li><strong>Camera conditions are not yet reliable.</strong> Half the recordings lost sight of the hand often enough to invalidate the result.</li>
+          <li><strong>The expert benchmark rests on three recordings, not the five required.</strong> Everything the system judges is measured against it, so it has to represent how the task is really done — not a handful of attempts.</li>
+          <li><strong>Camera conditions are not yet reliable.</strong> Most recordings lost sight of the hand often enough to invalidate the result.</li>
           <li><strong>Nothing has been checked against expert judgment.</strong> No qualified reviewer has yet scored the same attempts to compare.</li>
         </ul>
       </div>
