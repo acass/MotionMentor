@@ -303,7 +303,7 @@
       <div class="modal-header">
         <div class="modal-title-group">
           <h3 class="modal-title">📹 Live Camera & Take Recorder</h3>
-          <p class="modal-subtitle">Align your hand with the guide. Click "Start 5s Recording" to capture your coached attempt.</p>
+          <p class="modal-subtitle">Choose an expert reference or trainee attempt, then align your hand with the guide.</p>
         </div>
         <button id="btnCloseRecordModal" class="modal-close-btn">&times;</button>
       </div>
@@ -344,11 +344,18 @@
 
         <!-- Feedback & Processing Status -->
         <div class="record-msg-area" id="recordMsgArea">
-          Ready to record. Click "Start 5s Recording" or run a synthetic test take.
+          Ready to record. Select a role, then click "Start 5s Recording" or run a synthetic test take.
         </div>
 
         <!-- Controls -->
         <div class="record-controls-row">
+          <label class="record-role-control" for="recordRole">
+            Capture as
+            <select id="recordRole" class="styled-select">
+              <option value="trainee" selected>Trainee attempt</option>
+              <option value="expert">Expert reference</option>
+            </select>
+          </label>
           <button id="btnStartLiveRecord" class="btn btn-record-action">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="8"/>

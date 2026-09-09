@@ -96,3 +96,5 @@ def test_static_dashboard_index(client: TestClient) -> None:
     assert res.status_code == 200
     assert "MotionMentor" in res.text
     assert "deck-grid" in res.text
+    assert 'id="recordRole"' in res.text
+    assert 'value="expert"' in res.text

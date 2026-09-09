@@ -1216,6 +1216,20 @@ body {
   gap: 12px;
 }
 
+.record-role-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.record-role-control .styled-select {
+  min-width: 148px;
+}
+
 .btn-record-action {
   flex: 1;
   background: var(--accent-coral);

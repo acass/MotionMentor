@@ -107,6 +107,7 @@ const dom = {
   recCountdownTimer: document.getElementById('recCountdownTimer'),
   recordProgressBar: document.getElementById('recordProgressBar'),
   recordMsgArea: document.getElementById('recordMsgArea'),
+  recordRole: document.getElementById('recordRole'),
   btnStartLiveRecord: document.getElementById('btnStartLiveRecord'),
   btnSyntheticRecord: document.getElementById('btnSyntheticRecord'),
 };
@@ -921,6 +922,8 @@ function closeRecordModal() {
 async function startLiveRecording() {
   if (!recordState.liveStream || recordState.isRecording) return;
 
+  const captureRole = dom.recordRole.value;
+
   dom.btnStartLiveRecord.disabled = true;
   dom.btnSyntheticRecord.disabled = true;
   recordState.isRecording = true;
@@ -979,7 +982,9 @@ async function startLiveRecording() {
   clearInterval(timerInterval);
 
   dom.recBanner.classList.add('hidden');
-  dom.recordMsgArea.innerHTML = '<span class="status-dot cyan-dot"></span> Processing video with MediaPipe 3D Hand Landmarker & DTW...';
+  dom.recordMsgArea.innerHTML = captureRole === 'expert'
+    ? '<span class="status-dot cyan-dot"></span> Processing expert take and rebuilding the reference profile...'
+    : '<span class="status-dot cyan-dot"></span> Processing video with MediaPipe 3D Hand Landmarker & DTW...';
 
   recordState.mediaRecorder.onstop = async () => {
     const blob = new Blob(recordState.recordedChunks, { type: mimeType });
@@ -995,7 +1000,7 @@ async function startLiveRecording() {
             video_base64: base64Data,
             mime_type: mimeType,
             activity_id: actId,
-            role: 'trainee',
+            role: captureRole,
             participant_id: 'browser-user',
           }),
         });
@@ -1007,17 +1012,19 @@ async function startLiveRecording() {
 
         closeRecordModal();
 
-        // Refresh sessions list
-        state.sessions = await fetch('/api/sessions').then(r => r.json());
-        populateAttemptDropdown();
-        dom.attemptSelect.value = data.session.session_id;
-        await onAttemptChange();
+        await loadInitialData();
 
-        const scoreMsg = data.assessment?.overall_score
-          ? `Score: ${data.assessment.overall_score.toFixed(1)} / 100 (${data.assessment.interpretation_band})`
-          : 'Processing complete';
+        const scoreMsg = captureRole === 'expert'
+          ? (data.reference
+            ? `Reference rebuilt from ${data.reference.total_demonstrations} expert take${data.reference.total_demonstrations === 1 ? '' : 's'}`
+            : 'Expert take saved. It did not meet the quality threshold for a reference rebuild')
+          : (data.assessment?.overall_score
+            ? `Score: ${data.assessment.overall_score.toFixed(1)} / 100 (${data.assessment.interpretation_band})`
+            : 'Processing complete');
         dom.criticalAlert.classList.remove('hidden');
-        dom.criticalText.textContent = `✅ New Attempt Captured! ${scoreMsg}. Review synchronized ghost overlay below.`;
+        dom.criticalText.textContent = captureRole === 'expert'
+          ? `✅ New Expert Take Captured! ${scoreMsg}.`
+          : `✅ New Attempt Captured! ${scoreMsg}. Review synchronized ghost overlay below.`;
       } catch (err) {
         console.error('Record upload error:', err);
         dom.recordMsgArea.textContent = `Upload failed: ${err.message}`;
@@ -1033,9 +1040,10 @@ async function startLiveRecording() {
 }
 
 async function startSyntheticRecording() {
+  const captureRole = dom.recordRole.value;
   dom.btnStartLiveRecord.disabled = true;
   dom.btnSyntheticRecord.disabled = true;
-  dom.recordMsgArea.innerHTML = '<span class="status-dot cyan-dot"></span> Generating synthetic kinematics attempt...';
+  dom.recordMsgArea.innerHTML = `<span class="status-dot cyan-dot"></span> Generating synthetic ${captureRole} take...`;
 
   try {
     const actId = state.currentActivity ? state.currentActivity.activity_id : 'reach-and-pinch-001';
@@ -1045,7 +1053,7 @@ async function startSyntheticRecording() {
       body: JSON.stringify({
         activity_id: actId,
         duration: 5.0,
-        role: 'trainee',
+        role: captureRole,
       }),
     });
 
@@ -1054,14 +1062,14 @@ async function startSyntheticRecording() {
 
     closeRecordModal();
 
-    // Reload sessions and select the synthetic attempt
-    state.sessions = await fetch('/api/sessions').then(r => r.json());
-    populateAttemptDropdown();
-    dom.attemptSelect.value = data.session.session_id;
-    await onAttemptChange();
+    await loadInitialData();
 
     dom.criticalAlert.classList.remove('hidden');
-    dom.criticalText.textContent = `✅ Synthetic Attempt Loaded! Ready for playback review.`;
+    dom.criticalText.textContent = captureRole === 'expert'
+      ? (data.reference
+        ? `✅ Synthetic Expert Take Captured! Reference rebuilt from ${data.reference.total_demonstrations} expert take${data.reference.total_demonstrations === 1 ? '' : 's'}.`
+        : '✅ Synthetic Expert Take Captured, but it did not meet the quality threshold for a reference rebuild.')
+      : '✅ Synthetic Attempt Loaded! Ready for playback review.';
   } catch (err) {
     console.error('Synthetic take failed:', err);
     dom.recordMsgArea.textContent = `Synthetic generation failed: ${err.message}`;
@@ -1069,4 +1077,3 @@ async function startSyntheticRecording() {
     dom.btnSyntheticRecord.disabled = false;
   }
 }
-

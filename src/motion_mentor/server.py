@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -208,14 +208,14 @@ class RecordUploadRequest(BaseModel):
     video_base64: str
     mime_type: Optional[str] = "video/webm"
     activity_id: Optional[str] = "reach-and-pinch-001"
-    role: Optional[str] = "trainee"
+    role: Literal["expert", "trainee"] = "trainee"
     participant_id: Optional[str] = "local-user"
 
 
 class SyntheticRecordRequest(BaseModel):
     activity_id: Optional[str] = "reach-and-pinch-001"
     duration: Optional[float] = 5.0
-    role: Optional[str] = "trainee"
+    role: Literal["expert", "trainee"] = "trainee"
     participant_id: Optional[str] = "local-user"
 
 
@@ -342,22 +342,66 @@ def record_upload(req: RecordUploadRequest) -> Dict[str, Any]:
     )
     mentor.db.save_session(session)
 
-    # Auto-evaluate against reference
-    assessment_data = None
-    ref = mentor.db.get_latest_reference_profile(session.activity_id)
-    if ref:
-        from motion_mentor.comparison.pipeline import prepare_session_features, compare_attempt_to_reference
-        try:
-            prepare_session_features(mentor, session)
-            assessment = compare_attempt_to_reference(mentor, session, ref.reference_id)
-            assessment_data = assessment.model_dump()
-        except Exception as e:
-            logger.warning("Auto-evaluation failed: %s", e)
+    assessment_data, reference_data = process_completed_session(mentor, session)
 
     return {
         "session": session.model_dump(),
         "assessment": assessment_data,
+        "reference": reference_data,
     }
+
+
+def rebuild_reference_for_activity(mentor: MotionMentorApp, activity_id: str) -> Optional[Dict[str, Any]]:
+    """Create a new reference from every quality-passing expert take for an activity."""
+    from motion_mentor.comparison.pipeline import prepare_session_features
+    from motion_mentor.comparison.reference import ReferenceProfileBuilder
+
+    activity = mentor.db.get_activity(activity_id)
+    if not activity:
+        logger.warning("Skipping reference rebuild: activity %s was not found", activity_id)
+        return None
+
+    expert_sessions = [
+        session for session in mentor.db.list_sessions(activity_id=activity_id, role="expert")
+        if session.quality_summary and session.quality_summary.meets_criteria
+    ]
+    if not expert_sessions:
+        logger.warning("Skipping reference rebuild: no quality-passing expert takes for %s", activity_id)
+        return None
+
+    try:
+        sessions_and_features = [
+            (session, prepare_session_features(mentor, session))
+            for session in expert_sessions
+        ]
+        profile, _ = ReferenceProfileBuilder(activity).build_profile(sessions_and_features)
+        mentor.db.save_reference_profile(profile)
+        return profile.model_dump()
+    except Exception:
+        logger.exception("Reference rebuild failed for activity %s", activity_id)
+        return None
+
+
+def process_completed_session(
+    mentor: MotionMentorApp, session: Session
+) -> tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """Refresh the expert reference or assess a trainee session after recording."""
+    if session.role == "expert":
+        return None, rebuild_reference_for_activity(mentor, session.activity_id)
+
+    reference = mentor.db.get_latest_reference_profile(session.activity_id)
+    if not reference:
+        return None, None
+
+    from motion_mentor.comparison.pipeline import compare_attempt_to_reference, prepare_session_features
+
+    try:
+        prepare_session_features(mentor, session)
+        assessment = compare_attempt_to_reference(mentor, session, reference.reference_id)
+        return assessment.model_dump(), None
+    except Exception as e:
+        logger.warning("Auto-evaluation failed: %s", e)
+        return None, None
 
 
 @app.post("/api/record_synthetic")
@@ -379,7 +423,7 @@ def record_synthetic(req: SyntheticRecordRequest) -> Dict[str, Any]:
     recorder = SessionRecorder(
         session_id=session_id,
         activity=activity,
-        role=req.role or "trainee",
+        role=req.role,
         participant_id=req.participant_id or "synthetic-user",
         camera_id="synthetic",
         width=1280,
@@ -407,22 +451,13 @@ def record_synthetic(req: SyntheticRecordRequest) -> Dict[str, Any]:
     session, _ = recorder.finish(quality_summary=summary)
     mentor.db.save_session(session)
 
-    assessment_data = None
-    ref = mentor.db.get_latest_reference_profile(activity.activity_id)
-    if ref:
-        from motion_mentor.comparison.pipeline import prepare_session_features, compare_attempt_to_reference
-        try:
-            prepare_session_features(mentor, session)
-            assessment = compare_attempt_to_reference(mentor, session, ref.reference_id)
-            assessment_data = assessment.model_dump()
-        except Exception as e:
-            logger.warning("Auto-evaluation failed: %s", e)
+    assessment_data, reference_data = process_completed_session(mentor, session)
 
     return {
         "session": session.model_dump(),
         "assessment": assessment_data,
+        "reference": reference_data,
     }
-
 
 @app.get("/api/videos/{video_filename}")
 def stream_video(video_filename: str) -> FileResponse:
