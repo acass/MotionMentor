@@ -241,13 +241,28 @@ def cmd_record(args: argparse.Namespace) -> None:
     )
     session, records = recorder.finish(quality_summary=summary)
     app.db.save_session(session)
-    app.close()
 
     console.print(f"\n[bold green]Session recorded successfully![/bold green]")
     console.print(f"Session ID: [cyan]{session.session_id}[/cyan]")
     console.print(f"Video saved to: [yellow]{session.video_path}[/yellow]")
     console.print(f"Landmarks saved to: [yellow]{session.landmark_path}[/yellow]")
     print_terminal_quality_report(summary, session.session_id, session.activity_name)
+
+    should_eval = args.evaluate if getattr(args, "evaluate", None) is not None else (args.role == "trainee")
+    if should_eval:
+        latest_ref = app.db.get_latest_reference_profile(session.activity_id)
+        if latest_ref:
+            if not summary.meets_criteria:
+                console.print("\n[yellow]Notice: Quality criteria had warnings (low coverage or dropped frames). Evaluating with LOW reliability flag...[/yellow]")
+            else:
+                console.print("\n[bold cyan]Evaluating attempt against expert reference profile...[/bold cyan]")
+            from scripts.compare_sessions import compare_attempt_to_reference, print_assessment_scorecard
+            assessment = compare_attempt_to_reference(app, session, latest_ref.reference_id)
+            print_assessment_scorecard(assessment)
+        else:
+            console.print("[yellow]No reference profile found for this activity to compare against.[/yellow]")
+
+    app.close()
 
 
 def cmd_replay(args: argparse.Namespace) -> None:
@@ -581,6 +596,13 @@ def cmd_compare(args: argparse.Namespace) -> None:
     print_assessment_scorecard(assessment)
 
 
+def cmd_serve(args: argparse.Namespace) -> None:
+    """Launch the MotionMentor Web Dashboard server."""
+    from motion_mentor.server import run_server
+    console.print(f"[bold cyan]Starting MotionMentor Web Dashboard on http://{args.host}:{args.port}...[/bold cyan]")
+    run_server(host=args.host, port=args.port)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="motion-mentor",
@@ -612,6 +634,8 @@ def main() -> None:
     p_rec.add_argument("--width", type=int, default=1280)
     p_rec.add_argument("--height", type=int, default=720)
     p_rec.add_argument("--fps", type=int, default=30)
+    p_rec.add_argument("--evaluate", action="store_true", default=None, help="Automatically evaluate against reference profile")
+    p_rec.add_argument("--no-evaluate", action="store_false", dest="evaluate", help="Disable automatic evaluation")
 
     # replay
     p_rep = subparsers.add_parser("replay", help="Replay a recorded session with landmark overlay")
@@ -656,6 +680,11 @@ def main() -> None:
     p_cmp.add_argument("--attempt", required=True, help="Trainee attempt session UUID")
     p_cmp.add_argument("--reference", required=True, help="Reference profile UUID or expert session UUID")
 
+    # serve
+    p_srv = subparsers.add_parser("serve", help="Launch interactive web dashboard server")
+    p_srv.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+    p_srv.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
+
     args = parser.parse_args()
 
     commands = {
@@ -668,6 +697,7 @@ def main() -> None:
         "plot-features": cmd_plot_features_cli,
         "build-reference": cmd_build_reference,
         "compare": cmd_compare,
+        "serve": cmd_serve,
     }
 
     cmd_fn = commands.get(args.command)

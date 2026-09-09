@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MotionMentor // Explainable Hand Motion Skill Assessment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="brand-icon">
+        <span class="pulse-ring"></span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"></path>
+          <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"></path>
+          <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"></path>
+          <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">MOTION<span class="accent-cyan">MENTOR</span></span>
+        <span class="brand-sub">Explainable Biomechanics Coaching</span>
+      </div>
+    </div>
+
+    <div class="nav-controls">
+      <div class="selector-group">
+        <label for="activitySelect">Activity:</label>
+        <select id="activitySelect" class="styled-select"></select>
+      </div>
+
+      <div class="selector-group">
+        <label for="attemptSelect">Trainee Attempt:</label>
+        <select id="attemptSelect" class="styled-select"></select>
+      </div>
+
+      <div class="selector-group">
+        <label for="referenceSelect">Reference:</label>
+        <select id="referenceSelect" class="styled-select"></select>
+      </div>
+
+      <button id="btnRecompare" class="btn btn-outline" title="Re-run DTW comparison">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+        Re-Evaluate
+      </button>
+
+      <button id="btnToggleHistory" class="btn btn-ghost" title="View historical attempts">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        History
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-layout">
+    <!-- Left Panel: Playback Deck & Dual Skeletons -->
+    <section class="playback-section">
+      <!-- Video / Canvas Grid -->
+      <div class="deck-grid" id="deckGrid">
+        <!-- Expert Panel -->
+        <div class="video-card expert-card" id="expertCard">
+          <div class="card-header">
+            <div class="header-badge expert-badge">
+              <span class="status-dot cyan-dot"></span>
+              EXPERT REFERENCE
+            </div>
+            <div class="telemetry" id="expertTelemetry">0.0s / Frame 0</div>
+          </div>
+          <div class="video-wrapper">
+            <video id="expertVideo" playsinline preload="auto" muted></video>
+            <canvas id="expertCanvas" class="overlay-canvas"></canvas>
+            <div class="video-placeholder" id="expertPlaceholder">Loading Expert Take...</div>
+          </div>
+        </div>
+
+        <!-- Trainee Panel -->
+        <div class="video-card trainee-card" id="traineeCard">
+          <div class="card-header">
+            <div class="header-badge trainee-badge">
+              <span class="status-dot coral-dot"></span>
+              TRAINEE ATTEMPT
+            </div>
+            <div class="telemetry" id="traineeTelemetry">0.0s / Frame 0</div>
+          </div>
+          <div class="video-wrapper">
+            <video id="traineeVideo" playsinline preload="auto" muted></video>
+            <canvas id="traineeCanvas" class="overlay-canvas"></canvas>
+            <div class="video-placeholder" id="traineePlaceholder">Loading Trainee Attempt...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Superimposed Ghost Skeleton View (Optional Toggleable Centerpiece) -->
+      <div class="superimposed-panel" id="superimposedPanel">
+        <div class="superimposed-header">
+          <span class="panel-tag">SUPERIMPOSED SKELETON ALIGNMENT</span>
+          <div class="canvas-legend">
+            <span class="legend-item"><span class="legend-color cyan-box"></span> Expert Ghost</span>
+            <span class="legend-item"><span class="legend-color coral-box"></span> Trainee Skeleton</span>
+            <span class="legend-item"><span class="legend-color red-box"></span> Joint Deviation (&gt;2σ)</span>
+          </div>
+        </div>
+        <div class="canvas-container">
+          <canvas id="superimposedCanvas" width="960" height="380"></canvas>
+        </div>
+      </div>
+
+      <!-- Master Synchronized Playback Controls -->
+      <div class="master-controller glass-panel">
+        <div class="scrubber-container">
+          <div class="phase-markers-bar" id="phaseMarkers">
+            <span class="phase-label" style="left: 10%;">Approach</span>
+            <span class="phase-label" style="left: 35%;">90° Rotation</span>
+            <span class="phase-label" style="left: 60%;">Pinch Contact</span>
+            <span class="phase-label" style="left: 78%;">Hold</span>
+            <span class="phase-label" style="left: 92%;">Return</span>
+          </div>
+          <input type="range" id="masterScrubber" class="styled-range" min="0" max="1000" value="0" step="1">
+          <div class="time-readout">
+            <span id="currentTimeDisplay">00:00.0</span>
+            <span class="separator">/</span>
+            <span id="totalTimeDisplay">00:00.0</span>
+            <span class="fps-badge" id="fpsBadge">30 FPS</span>
+          </div>
+        </div>
+
+        <div class="transport-bar">
+          <div class="transport-left">
+            <button id="btnStepBack" class="ctrl-btn" title="Step Back 1 Frame (Key: [)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                <line x1="5" y1="19" x2="5" y2="5"></line>
+              </svg>
+            </button>
+
+            <button id="btnPlayPause" class="ctrl-btn play-btn" title="Play/Pause (Key: Space)">
+              <svg id="playIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              <svg id="pauseIcon" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+            </button>
+
+            <button id="btnStepForward" class="ctrl-btn" title="Step Forward 1 Frame (Key: ])">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                <line x1="19" y1="5" x2="19" y2="19"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div class="transport-center">
+            <div class="mode-toggles">
+              <label class="toggle-label" title="Align trainee and expert time in DTW warped space">
+                <input type="checkbox" id="chkDtwWarp" checked>
+                <span class="toggle-switch"></span>
+                <span>DTW Warped Sync</span>
+              </label>
+              <label class="toggle-label" title="Show superimposed 3D skeleton view">
+                <input type="checkbox" id="chkSuperimposed" checked>
+                <span class="toggle-switch"></span>
+                <span>Ghost Skeleton</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="transport-right">
+            <label for="playbackSpeed" class="speed-label">Speed:</label>
+            <select id="playbackSpeed" class="styled-select speed-select">
+              <option value="0.25">0.25x</option>
+              <option value="0.5">0.5x</option>
+              <option value="1.0" selected>1.0x</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Panel: Scorecard, Components & Coaching Feedback -->
+    <aside class="analysis-sidebar">
+      <!-- Overall Score Radial Gauge Card -->
+      <div class="score-card glass-panel" id="overallScoreCard">
+        <div class="score-card-top">
+          <div class="gauge-container">
+            <svg class="radial-gauge" viewBox="0 0 120 120">
+              <circle class="gauge-bg" cx="60" cy="60" r="50"></circle>
+              <circle class="gauge-fill" id="gaugeFill" cx="60" cy="60" r="50"></circle>
+            </svg>
+            <div class="gauge-content">
+              <span class="gauge-number" id="overallScoreNumber">--</span>
+              <span class="gauge-scale">/ 100</span>
+            </div>
+          </div>
+
+          <div class="score-meta">
+            <div class="band-pill" id="interpretationBandPill">Evaluating...</div>
+            <div class="reliability-row">
+              <span class="meta-title">Reliability:</span>
+              <span class="reliability-pill" id="reliabilityPill">--</span>
+            </div>
+            <div class="coverage-row">
+              <span class="meta-title">Hand Tracking:</span>
+              <span class="meta-val" id="coverageVal">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Critical Failure Alert Banner (if applicable) -->
+        <div class="critical-alert hidden" id="criticalAlert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <div class="critical-text" id="criticalText"></div>
+        </div>
+      </div>
+
+      <!-- Component Breakdown Dimension Cards -->
+      <div class="components-container glass-panel">
+        <div class="panel-section-title">COMPONENT DIMENSIONS</div>
+        <div class="components-list" id="componentsList">
+          <!-- Dynamically Populated Components -->
+        </div>
+      </div>
+
+      <!-- Actionable Coaching Feedback Items -->
+      <div class="feedback-container glass-panel">
+        <div class="panel-section-title">
+          <span>COACHING CORRECTIONS</span>
+          <span class="sub-badge" id="feedbackCountBadge">0 tips</span>
+        </div>
+        <div class="feedback-list" id="feedbackList">
+          <!-- Dynamically populated actionable feedback cards -->
+        </div>
+      </div>
+
+      <!-- Kinematics Live Mini-Chart -->
+      <div class="chart-container glass-panel">
+        <div class="panel-section-title">
+          <span>FEATURE TIMELINE</span>
+          <select id="featureChartSelect" class="styled-select chart-select">
+            <option value="pinch_distance">Pinch Aperture</option>
+            <option value="palm_pitch">Wrist Pitch (Tilt)</option>
+            <option value="palm_roll">Wrist Roll (Rotation)</option>
+            <option value="wrist_y">Vertical Position (Y)</option>
+            <option value="wrist_velocity">Linear Speed</option>
+          </select>
+        </div>
+        <canvas id="timelineChartCanvas" width="400" height="130"></canvas>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Historical Attempts Drawer Modal -->
+  <div class="modal-overlay hidden" id="historyModal">
+    <div class="modal-content glass-panel">
+      <div class="modal-header">
+        <h3 class="modal-title">Performance History & Attempts</h3>
+        <button id="btnCloseHistory" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date / Time</th>
+              <th>Role</th>
+              <th>Duration</th>
+              <th>Coverage</th>
+              <th>Overall Score</th>
+              <th>Band</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
