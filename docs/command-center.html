@@ -1,0 +1,2377 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MotionMentor Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* ============================================================
+   MotionMentor Command Center
+   Instrument-panel identity: IBM Plex family, teal signal accent,
+   dark bezel rail against a cool paper content field.
+   ============================================================ */
+
+:root{
+  --bg:#f1f4f4;
+  --surface:#ffffff;
+  --surface-2:#e8eded;
+  --surface-3:#dde4e4;
+  --ink:#0f1a1c;
+  --ink-2:#415254;
+  --ink-3:#6b7d7f;
+  --line:#d2dadb;
+  --line-strong:#b6c2c3;
+  --accent:#0e7490;
+  --accent-ink:#0a5c73;
+  --accent-soft:#d8eef3;
+  --bezel:#0c1618;
+  --bezel-ink:#c6d6d8;
+  --bezel-ink-2:#7d9296;
+  --bezel-line:#1e2e31;
+
+  --s-gray:#65787a;   --s-gray-bg:#e6ebeb;
+  --s-blue:#20558f;   --s-blue-bg:#dde8f4;
+  --s-purple:#5f3f9c; --s-purple-bg:#e7e0f6;
+  --s-amber:#8f5c00;  --s-amber-bg:#faecd2;
+  --s-red:#a52017;    --s-red-bg:#fadedb;
+  --s-green:#0f6a43;  --s-green-bg:#d7efe3;
+
+  --r-sm:3px; --r-md:6px; --r-lg:10px;
+  --shadow:0 1px 2px rgba(12,22,24,.06),0 8px 24px -12px rgba(12,22,24,.18);
+  --rail-w:236px;
+}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a1113;
+    --surface:#111a1d;
+    --surface-2:#182427;
+    --surface-3:#1f2d31;
+    --ink:#e5eded;
+    --ink-2:#a5b5b7;
+    --ink-3:#7a8c8e;
+    --line:#243437;
+    --line-strong:#33474b;
+    --accent:#34b7ce;
+    --accent-ink:#6ed2e4;
+    --accent-soft:#0e343d;
+    --bezel:#060e10;
+    --bezel-ink:#cfdedf;
+    --bezel-ink-2:#7c9195;
+    --bezel-line:#1a292c;
+
+    --s-gray:#93a4a6;   --s-gray-bg:#1d2a2c;
+    --s-blue:#7cadea;   --s-blue-bg:#13263a;
+    --s-purple:#b294e8; --s-purple-bg:#241c3a;
+    --s-amber:#e6a743;  --s-amber-bg:#33260e;
+    --s-red:#f4837a;    --s-red-bg:#3a1a17;
+    --s-green:#4ac48c;  --s-green-bg:#0f2f22;
+
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a1113;
+  --surface:#111a1d;
+  --surface-2:#182427;
+  --surface-3:#1f2d31;
+  --ink:#e5eded;
+  --ink-2:#a5b5b7;
+  --ink-3:#7a8c8e;
+  --line:#243437;
+  --line-strong:#33474b;
+  --accent:#34b7ce;
+  --accent-ink:#6ed2e4;
+  --accent-soft:#0e343d;
+  --bezel:#060e10;
+  --bezel-ink:#cfdedf;
+  --bezel-ink-2:#7c9195;
+  --bezel-line:#1a292c;
+
+  --s-gray:#93a4a6;   --s-gray-bg:#1d2a2c;
+  --s-blue:#7cadea;   --s-blue-bg:#13263a;
+  --s-purple:#b294e8; --s-purple-bg:#241c3a;
+  --s-amber:#e6a743;  --s-amber-bg:#33260e;
+  --s-red:#f4837a;    --s-red-bg:#3a1a17;
+  --s-green:#4ac48c;  --s-green-bg:#0f2f22;
+
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+  font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;margin:0;text-wrap:balance;letter-spacing:-.005em}
+h1{font-size:1.85rem;font-weight:700;line-height:1.15}
+h2{font-size:1.28rem;font-weight:600}
+h3{font-size:1.02rem;font-weight:600}
+p{margin:0}
+a{color:var(--accent-ink)}
+code,.mono,.num{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)}
+
+/* ---------- shell ---------- */
+.shell{display:flex;min-height:100vh;align-items:stretch}
+.rail{
+  width:var(--rail-w);flex:0 0 var(--rail-w);background:var(--bezel);color:var(--bezel-ink);
+  display:flex;flex-direction:column;gap:2px;padding-block:20px;padding-inline:0;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.rail-brand{padding:0 20px 16px;border-bottom:1px solid var(--bezel-line);margin-bottom:12px}
+.rail-brand .mark{
+  font-family:"IBM Plex Mono",monospace;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--bezel-ink-2);display:block;margin-bottom:6px;
+}
+.rail-brand .name{font-family:"IBM Plex Sans Condensed",sans-serif;font-size:1.22rem;font-weight:700;color:#fff;letter-spacing:-.01em;line-height:1.1}
+.rail-brand .sub{font-size:.74rem;color:var(--bezel-ink-2);margin-top:4px}
+.nav{display:flex;flex-direction:column;gap:1px;padding-inline:10px}
+.nav-group{font-family:"IBM Plex Mono",monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:#5d7276;padding:14px 10px 5px}
+.nav a{
+  display:flex;align-items:baseline;gap:9px;padding:7px 10px;border-radius:var(--r-md);
+  color:var(--bezel-ink);text-decoration:none;font-size:.86rem;border-left:2px solid transparent;
+}
+.nav a .idx{font-family:"IBM Plex Mono",monospace;font-size:.66rem;color:#5d7276;width:1.1em;flex:0 0 auto}
+.nav a:hover{background:#132226}
+.nav a[aria-current="page"]{background:#152a2f;color:#fff;border-left-color:var(--accent)}
+.nav a[aria-current="page"] .idx{color:var(--accent)}
+.rail-foot{margin-top:auto;padding:16px 20px 0;border-top:1px solid var(--bezel-line);font-size:.72rem;color:var(--bezel-ink-2);display:flex;flex-direction:column;gap:8px}
+.rail-foot button{background:#16272b;border:1px solid var(--bezel-line);color:var(--bezel-ink);padding:6px 10px;border-radius:var(--r-md);cursor:pointer;font-size:.74rem;text-align:left}
+.rail-foot button:hover{background:#1d3237}
+
+.main{flex:1;min-width:0;padding-block:26px 64px;padding-inline:clamp(16px,3vw,40px)}
+.view{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.view-head{display:flex;flex-direction:column;gap:6px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.63rem;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-3)}
+.view-head p{color:var(--ink-2);max-width:66ch}
+
+/* ---------- primitives ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px}
+.grid{display:grid;gap:14px}
+.section{display:flex;flex-direction:column;gap:12px}
+.section > .sec-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sec-title .count{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--ink-3)}
+.muted{color:var(--ink-3)}
+.dim{color:var(--ink-2)}
+.small{font-size:.82rem}
+.tiny{font-size:.74rem}
+hr.rule{border:0;border-top:1px solid var(--line);margin:0}
+
+.badge{
+  display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:100px;
+  font-size:.72rem;font-weight:500;line-height:1.5;white-space:nowrap;
+  background:var(--s-gray-bg);color:var(--s-gray);border:1px solid transparent;
+}
+.badge .g{font-size:.66rem;line-height:1}
+.badge.gray{background:var(--s-gray-bg);color:var(--s-gray)}
+.badge.blue{background:var(--s-blue-bg);color:var(--s-blue)}
+.badge.purple{background:var(--s-purple-bg);color:var(--s-purple)}
+.badge.amber{background:var(--s-amber-bg);color:var(--s-amber)}
+.badge.red{background:var(--s-red-bg);color:var(--s-red)}
+.badge.green{background:var(--s-green-bg);color:var(--s-green)}
+.badge.assumed{background:transparent;color:var(--ink-3);border:1px dashed var(--line-strong);font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.06em}
+
+.bar{height:6px;border-radius:100px;background:var(--surface-2);overflow:hidden;position:relative}
+.bar > i{display:block;height:100%;border-radius:100px;background:var(--accent)}
+.bar.green > i{background:var(--s-green)} .bar.amber > i{background:var(--s-amber)}
+.bar.red > i{background:var(--s-red)} .bar.purple > i{background:var(--s-purple)}
+.bar.gray > i{background:var(--s-gray)} .bar.blue > i{background:var(--s-blue)}
+
+table{border-collapse:collapse;width:100%;font-size:.84rem}
+th{text-align:left;font-family:"IBM Plex Mono",monospace;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:500;padding:8px 10px;border-bottom:1px solid var(--line-strong);white-space:nowrap;vertical-align:bottom}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.scroll-x{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
+.scroll-x table{min-width:760px}
+tbody tr.flagged td:first-child{box-shadow:inset 3px 0 0 var(--s-red)}
+tbody tr.warned td:first-child{box-shadow:inset 3px 0 0 var(--s-amber)}
+
+.kv{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:5px 16px;font-size:.85rem}
+.kv dt{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding-top:2px}
+.kv dd{margin:0}
+ul.tight{margin:0;padding-left:1.05rem;display:flex;flex-direction:column;gap:4px}
+ul.tight li::marker{color:var(--ink-3)}
+ul.none{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+
+.chipline{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:.7rem;padding:2px 7px;border-radius:var(--r-sm);background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}
+.evi{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--ink-3)}
+
+/* ---------- overview ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
+.mission{font-size:1.02rem;color:var(--ink-2);max-width:60ch}
+.healthbox{border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px;background:var(--surface);display:flex;flex-direction:column;gap:10px}
+.healthbox .hl{display:flex;align-items:center;gap:10px}
+.healthbox .hl .dotstrip{width:5px;align-self:stretch;border-radius:100px;background:var(--s-amber)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:0;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--surface)}
+.metric{padding:14px 16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:5px}
+.metric:last-child{border-right:0}
+.metric .lab{font-family:"IBM Plex Mono",monospace;font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.metric .val{font-family:"IBM Plex Sans Condensed",sans-serif;font-size:1.72rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.metric .note{font-size:.75rem;color:var(--ink-3)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.risklist li,.acclist li{display:flex;gap:10px;align-items:flex-start}
+.risklist .sev{flex:0 0 auto;margin-top:2px}
+details.calc{border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-2);padding:10px 12px}
+details.calc summary{cursor:pointer;font-size:.8rem;color:var(--accent-ink);font-weight:500}
+details.calc[open] summary{margin-bottom:8px}
+
+/* ---------- phases ---------- */
+details.phase{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);overflow:hidden}
+details.phase + details.phase{margin-top:10px}
+details.phase > summary{
+  cursor:pointer;list-style:none;padding:14px 18px;display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;
+}
+details.phase > summary::-webkit-details-marker{display:none}
+details.phase[open] > summary{border-bottom:1px solid var(--line);background:var(--surface-2)}
+.pnum{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink-3);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:2px 6px}
+.psum-main{display:flex;flex-direction:column;gap:4px;min-width:0}
+.psum-main .t{font-family:"IBM Plex Sans Condensed",sans-serif;font-weight:600;font-size:1.04rem}
+.psum-right{display:flex;align-items:center;gap:12px}
+.psum-right .pct{font-family:"IBM Plex Mono",monospace;font-size:.85rem;font-variant-numeric:tabular-nums;width:3.4em;text-align:right}
+.psum-right .bar{width:110px}
+.pbody{padding:16px 18px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.pbody .full{grid-column:1/-1}
+.crit li{font-size:.83rem}
+
+/* ---------- timeline ---------- */
+.tl{position:relative;padding-left:30px;display:flex;flex-direction:column;gap:14px}
+.tl::before{content:"";position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tlitem{position:relative}
+.tlitem::before{
+  content:"";position:absolute;left:-26px;top:16px;width:12px;height:12px;border-radius:50%;
+  background:var(--surface);border:2px solid var(--s-gray);
+}
+.tlitem.done::before{background:var(--s-green);border-color:var(--s-green)}
+.tlitem.risk::before{background:var(--s-amber);border-color:var(--s-amber)}
+.tlitem.blocked::before{background:var(--s-red);border-color:var(--s-red)}
+.tlitem.future::before{border-color:var(--line-strong)}
+.tlhead{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;margin-bottom:6px}
+.tlhead .mid{font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--accent-ink);font-weight:500}
+.tldates{display:flex;flex-wrap:wrap;gap:14px;font-size:.78rem;color:var(--ink-2);margin-top:8px}
+.tldates b{font-family:"IBM Plex Mono",monospace;font-weight:500;color:var(--ink)}
+
+/* ---------- kanban ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:10px 12px}
+.toolbar label{display:flex;flex-direction:column;gap:3px;font-family:"IBM Plex Mono",monospace;font-size:.61rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.toolbar select,.toolbar input[type="search"]{
+  font-family:"IBM Plex Sans",sans-serif;font-size:.82rem;padding:5px 8px;border:1px solid var(--line-strong);
+  border-radius:var(--r-md);background:var(--bg);color:var(--ink);min-width:132px;
+}
+.toolbar .spacer{flex:1}
+.btn{background:var(--surface-2);border:1px solid var(--line-strong);border-radius:var(--r-md);padding:6px 11px;font-size:.8rem;cursor:pointer}
+.btn:hover{background:var(--surface-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(232px,1fr);gap:12px;overflow-x:auto;padding-bottom:8px;align-items:start}
+.col{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.colhead{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.colhead .nm{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.colhead .ct{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--ink-3)}
+.colrule{height:2px;border-radius:2px;background:var(--s-gray);opacity:.7}
+.wi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:10px;display:flex;flex-direction:column;gap:7px;cursor:pointer;text-align:left;width:100%}
+.wi:hover{border-color:var(--line-strong)}
+.wi .id{font-family:"IBM Plex Mono",monospace;font-size:.66rem;color:var(--ink-3)}
+.wi .ti{font-size:.84rem;font-weight:500;line-height:1.35}
+.wi .meta{display:flex;flex-wrap:wrap;gap:5px}
+.wi[data-pri="Critical"]{box-shadow:inset 3px 0 0 var(--s-red)}
+.wi[data-pri="High"]{box-shadow:inset 3px 0 0 var(--s-amber)}
+.empty{font-size:.76rem;color:var(--ink-3);padding:6px 2px;font-style:italic}
+
+/* ---------- detail drawer ---------- */
+.drawer{position:fixed;inset:0;background:rgba(8,16,18,.5);display:none;z-index:40;padding:20px}
+.drawer[open],.drawer.on{display:flex;justify-content:flex-end}
+.drawer-panel{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-lg);width:min(520px,100%);max-height:100%;overflow-y:auto;padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px}
+.drawer-close{align-self:flex-end}
+
+/* ---------- architecture ---------- */
+.archwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:8px}
+.archwrap svg{display:block;min-width:900px;max-width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.78rem;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:22px;height:12px;border-radius:2px;display:inline-block}
+
+/* ---------- risk matrix ---------- */
+.matrix{display:grid;grid-template-columns:auto repeat(3,minmax(96px,1fr));gap:4px;font-size:.76rem}
+.matrix .mh{font-family:"IBM Plex Mono",monospace;font-size:.63rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);display:flex;align-items:center;justify-content:center;padding:4px}
+.matrix .rh{justify-content:flex-end;text-align:right;padding-right:8px}
+.cell{border-radius:var(--r-md);padding:8px;min-height:64px;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;border:1px solid var(--line)}
+.cell.lo{background:var(--s-green-bg)} .cell.md{background:var(--s-amber-bg)} .cell.hi{background:var(--s-red-bg)}
+.cell .rid{font-family:"IBM Plex Mono",monospace;font-size:.68rem;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:1px 5px;cursor:default}
+
+/* ---------- stakeholder ---------- */
+.stake{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(18px,3vw,32px);display:flex;flex-direction:column;gap:24px}
+.stake h2{font-size:1.1rem}
+.stake .lede{font-size:1.05rem;color:var(--ink-2);max-width:62ch}
+.phasebars{display:flex;flex-direction:column;gap:10px}
+.phasebar{display:grid;grid-template-columns:minmax(150px,1fr) minmax(90px,220px) 3.4em;gap:12px;align-items:center;font-size:.86rem}
+.phasebar .pct{font-family:"IBM Plex Mono",monospace;text-align:right;font-variant-numeric:tabular-nums;font-size:.8rem}
+
+/* ---------- exports ---------- */
+.exportgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+textarea.io{
+  width:100%;min-height:220px;font-family:"IBM Plex Mono",monospace;font-size:.74rem;line-height:1.5;
+  padding:11px;border:1px solid var(--line-strong);border-radius:var(--r-md);background:var(--bg);color:var(--ink);resize:vertical;
+}
+.note-band{border-left:3px solid var(--accent);background:var(--accent-soft);padding:11px 14px;border-radius:0 var(--r-md) var(--r-md) 0;font-size:.85rem;color:var(--ink-2)}
+.note-band.warn{border-left-color:var(--s-amber);background:var(--s-amber-bg)}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .shell{flex-direction:column}
+  .rail{width:100%;flex:none;position:static;height:auto;padding-block:14px;gap:8px}
+  .rail-brand{padding-inline:16px}
+  .nav{flex-direction:row;overflow-x:auto;padding-inline:12px;gap:4px}
+  .nav-group{display:none}
+  .nav a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent;padding:6px 10px}
+  .nav a[aria-current="page"]{border-left:0;border-bottom-color:var(--accent)}
+  .rail-foot{margin-top:8px;flex-direction:row;flex-wrap:wrap;align-items:center}
+  .hero{grid-template-columns:1fr}
+  .metric{border-right:0;border-bottom:1px solid var(--line)}
+}
+@media (max-width:520px){
+  .phasebar{grid-template-columns:1fr 3.4em;gap:6px}
+  .phasebar .bar{grid-column:1/-1}
+  .metrics{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{
+  .rail,.toolbar,.drawer,.exportgrid,textarea.io{display:none!important}
+  body{background:#fff;color:#000;font-size:11pt}
+  .main{padding:0}
+  .card,.stake{border-color:#bbb;break-inside:avoid}
+  a{color:#000;text-decoration:none}
+}
+</style>
+
+<div class="shell">
+  <nav class="rail" aria-label="Dashboard sections">
+    <div class="rail-brand">
+      <span class="mark">Project Command Center</span>
+      <span class="name">MotionMentor</span>
+      <span class="sub">Explainable hand-motion skill assessment</span>
+    </div>
+    <div class="nav" id="nav"></div>
+    <div class="rail-foot">
+      <button id="themeBtn" type="button">Switch to dark</button>
+      <span id="footStamp" class="mono"></span>
+    </div>
+  </nav>
+  <main class="main"><div id="viewRoot"></div></main>
+</div>
+
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Work item detail">
+  <div class="drawer-panel" id="drawerPanel"></div>
+</div>
+<script>
+/* ============================================================================
+   ===== PROJECT DATA — edit this object, not the render code below it. =======
+   Every view is derived from PROJECT. Nothing below the DATA END marker needs
+   to change when the project changes.
+
+   EVIDENCE RULE: nothing is marked Complete or Passed without a file path,
+   commit SHA, test file, or database row behind it. Anything inferred rather
+   than observed carries assumed:true and renders an ASSUMED tag.
+   ============================================================================ */
+
+const PROJECT = {
+
+meta: {
+  name: "MotionMentor",
+  mission: "Score a trainee's hand movement against an expert demonstration and explain, in plain language and with visual evidence, exactly what to correct.",
+  lastUpdated: "2026-09-09",
+  currentPhase: "Phase 4 — MVP Hardening & Validation",
+  health: "At Risk",
+  healthWhy: "Phases 0–3 are built and the full capture-to-feedback pipeline runs end to end, with 48/48 automated tests passing. But three MVP exit conditions are measurably unmet: every expert reference profile was built from a single demonstration (the PRD requires five), the smoothness component scores 0.0 on 19 of 21 recorded assessments, and 6 of 12 captures fall below the 90% hand-detection floor. The scores the system currently produces are not yet trustworthy.",
+  objective: "Make the existing pipeline's scores defensible: multi-take expert references, a working smoothness component, and capture quality above the 90% coverage gate.",
+  nextMilestone: "MVP — Definition of Done (PRD §21)",
+  repo: "/Users/allencass/Desktop/MotionMentor · branch main · 8 commits",
+  platform: "Local desktop, single USB camera · Python 3.11–3.12 · no XR, no GPU, no cloud",
+  sources: [
+    "PRD.md (952 lines, header reads Status: Ready for prototype development)",
+    "README.md, configs/default.yaml, configs/activities/reach_and_pinch.yaml",
+    "src/motion_mentor/ — 8 subpackages read in full",
+    "tests/ — 15 files, 48 tests, executed 2026-09-09",
+    "data/motion_mentor.db — 12 sessions, 3 reference profiles, 21 assessment results",
+    "git log — 8 commits, all authored 2026-09-09 by Allen Cass"
+  ],
+  recentWins: [
+    { text: "Constrained DTW alignment, tolerance envelopes, component scoring and the ranked feedback generator all landed and are unit-tested.", evi: "commit 378ea67 · comparison/*.py · tests/test_scoring.py, test_dtw.py, test_feedback.py" },
+    { text: "Interactive web dashboard with synchronized expert/trainee video, ghost-skeleton overlay and a REST API.", evi: "commit 2e344ff · server.py · web/index.html, app.js" },
+    { text: "Browser-based recording with cross-platform ffmpeg transcoding, so a session can be captured without the CLI.", evi: "commit 0053c85 · server.py:223 /api/record_upload" },
+    { text: "Repository consolidated — loose scripts folded into the package as comparison/pipeline.py and reporting/plots.py.", evi: "commit 8f621c8" },
+    { text: "Full suite green: 48 of 48 tests pass in 3.05s.", evi: "pytest run 2026-09-09" }
+  ],
+  nextActions: [
+    "Record at least five expert takes of reach_and_pinch and rebuild the reference profile from them (HRD-02 → HRD-03).",
+    "Diagnose why the smoothness component returns 0.0 — inspect jerk features feeding scoring.py before changing the score mapping (HRD-01).",
+    "Re-run the seeded-error validation protocol from PRD §22 once a multi-take reference exists; this is the project's first real proof of correctness (HRD-06).",
+    "Fix capture conditions until coverage clears 90% on ten consecutive recordings (HRD-05).",
+    "Decide whether Phase 4 (MVP Hardening) is accepted as a real phase — it is currently a proposed insertion, not PRD text (DEC-09)."
+  ]
+},
+
+/* ---------------------------------------------------------------- PHASES -- */
+phases: [
+  { id:"p0", num:"P0", name:"Feasibility & Capture Validation", status:"At Risk",
+    purpose:"Prove that the selected USB camera and physical setup produce landmarks reliable enough for comparison.",
+    start:"2026-09-09", end:"2026-09-09", endAssumed:false,
+    entry:["A USB camera and a stable mount are available.","MediaPipe runs on the development machine."],
+    exit:[
+      {t:"At least 90% of relevant frames contain the expected hand.", met:false, evi:"6 of 12 sessions fail: 0.0%, 58.7%, 65.1%, 72.7%, 83.3%, 84.7% (data/motion_mentor.db)"},
+      {t:"Median processing rate is at least 24 FPS on the target computer.", met:true, evi:"effective FPS 30.0–30.4 on real captures"},
+      {t:"No persistent left/right hand identity swaps during the benchmark action.", met:null, evi:"Not measured — no test or recorded observation"},
+      {t:"Repeated recordings produce visually stable landmark trajectories.", met:null, evi:"Not measured"}
+    ],
+    deliverables:["Camera enumeration and configuration","Live skeleton overlay + HUD telemetry","Synchronized video + landmark recording","Capture-quality report","Benchmark action: reach_and_pinch"],
+    deps:[],
+    blockers:["ISS-05 — hand-detection coverage below the 90% gate on half of all recorded sessions"] },
+
+  { id:"p1", num:"P1", name:"Recording, Storage & Replay", status:"Complete",
+    purpose:"Build a reliable data-acquisition pipeline for expert and trainee recordings.",
+    start:"2026-09-09", end:"2026-09-09", endAssumed:false,
+    entry:["Phase 0 capture path works end to end."],
+    exit:[
+      {t:"A user can record and replay at least ten sessions without data corruption.", met:true, evi:"12 sessions recorded and readable in data/motion_mentor.db + data/recordings/"},
+      {t:"Video and landmark timelines remain synchronized within one frame.", met:true, evi:"Shared monotonic timestamp per frame — capture/recorder.py:92; verified in tests/test_capture_and_record.py"},
+      {t:"Raw and processed landmarks are independently accessible.", met:true, evi:"data/landmarks/*.parquet vs data/features/*.parquet"},
+      {t:"Invalid or low-confidence intervals are visible during replay.", met:true, evi:"HUD + reliability field surfaced in web deck"}
+    ],
+    deliverables:["SessionRecorder with MP4 + parquet output","SQLite session store","CLI replay with landmark overlay","JSON session export"],
+    deps:["p0"], blockers:[] },
+
+  { id:"p2", num:"P2", name:"Motion Representation & Comparison MVP", status:"Complete",
+    purpose:"Compare a trainee attempt with an expert reference and return an explainable score.",
+    start:"2026-09-09", end:"2026-09-09", endAssumed:false,
+    entry:["Recorded sessions exist in a stable schema."],
+    exit:[
+      {t:"The same expert repeating the action generally scores higher than deliberately incorrect performances.", met:null, evi:"Not validated — the PRD §22 seeded-error experiment has not been run (HRD-06)"},
+      {t:"Speed variations within the allowed range do not substantially lower pose or trajectory scores.", met:true, evi:"tests/test_dtw.py covers time-stretch alignment"},
+      {t:"The output identifies at least the three largest deviations.", met:true, evi:"comparison/feedback.py:32 ranks top-3 by z-score"},
+      {t:"A reviewer can inspect how every component score was calculated.", met:true, evi:"Component scores stored per assessment; scoring.py:29 z-score is inspectable"},
+      {t:"Automated tests cover normalization, feature extraction, alignment, and scoring.", met:true, evi:"test_normalization, test_features, test_dtw, test_scoring — 15 tests"}
+    ],
+    deliverables:["One Euro smoothing + gap interpolation","Hand normalization & global trajectory","Geometric + kinematic features","Constrained DTW","Medoid reference builder","Component scoring + feedback"],
+    deps:["p1"], blockers:[] },
+
+  { id:"p3", num:"P3", name:"Coaching Interface & History", status:"Complete",
+    purpose:"Turn the comparison engine into a usable training application.",
+    start:"2026-09-09", end:"2026-09-09", endAssumed:false,
+    entry:["Scoring pipeline returns component scores and feedback."],
+    exit:[
+      {t:"A new user can complete a recording and understand the result without developer assistance.", met:null, evi:"Not measured — no usability session recorded"},
+      {t:"Feedback points to a specific time range and measurable deviation.", met:true, evi:"feedback items carry time_sec and measured_deviation — 21 rows in assessment_results"},
+      {t:"The user can replay the exact segment associated with each correction.", met:true, evi:"web/app.js master scrubber + phase markers"},
+      {t:"Historical results remain reproducible after reference profiles are updated.", met:true, evi:"Each assessment stores its reference_profile_id and scoring_version"}
+    ],
+    deliverables:["FastAPI read API (13 endpoints)","Synchronized dual-video review deck","Ghost skeleton overlay","Score gauge + component + feedback panels","Browser recording upload","Session history"],
+    deps:["p2"],
+    blockers:[],
+    note:"Delivered as a FastAPI + browser dashboard, not the PySide6 desktop UI the PRD specified. See DEC-05." },
+
+  { id:"p4", num:"P4", name:"MVP Hardening & Validation", status:"In Progress",
+    purpose:"Close the gap between a pipeline that runs and a pipeline whose scores can be trusted. This phase is not in the PRD — it was inserted because the PRD's own MVP Definition of Done is measurably unmet.",
+    start:"2026-09-09", end:"2026-10-07", endAssumed:true,
+    entry:["Phases 0–3 built and running end to end."],
+    exit:[
+      {t:"At least five expert demonstrations recorded and a reference profile built from all of them.", met:false, evi:"All 3 profiles show total_demonstrations = 1"},
+      {t:"Smoothness component returns a meaningful non-zero score.", met:false, evi:"smoothness = 0.0 in 19 of 21 assessments"},
+      {t:"Ten consecutive captures clear the 90% detection-coverage gate.", met:false, evi:"6 of 12 recorded sessions fail the gate"},
+      {t:"The PRD §22 seeded-error experiment ranks the seeded errors into the correct components.", met:false, evi:"Not run"},
+      {t:"Deviation magnitudes are on a defensible scale.", met:false, evi:"Observed z-scores of 96.7σ and 642.0σ in stored feedback"}
+    ],
+    deliverables:["Multi-take expert reference","Smoothness component fix","Capture-quality remediation","Seeded-error validation report","Reliability-gating review"],
+    deps:["p3"],
+    blockers:["ISS-02 blocks HRD-03 and HRD-06 — no multi-take reference exists yet"],
+    assumed:true },
+
+  { id:"p5", num:"P5", name:"Task Stages, Tools & Object Context", status:"Not Started",
+    purpose:"Evaluate whether the hand interacted with the correct item in the correct way, not merely whether its motion looked similar.",
+    start:null, end:null, endAssumed:false,
+    entry:["A trusted motion-similarity baseline exists (Phase 4 exit)."],
+    exit:[
+      {t:"The system distinguishes visually similar hand motions performed on the wrong object.", met:null, evi:"Not started"},
+      {t:"Each required task stage has observable entry and completion conditions.", met:null, evi:"Not started"},
+      {t:"Tool/component tracking confidence is incorporated into result reliability.", met:null, evi:"Not started"},
+      {t:"A missing critical stage causes a clear failure regardless of motion similarity.", met:null, evi:"Partially present — checkpoint capping exists in scoring.py:180"}
+    ],
+    deliverables:["Pose / Holistic landmarks","YOLO object & tool tracking","Task-stage finite state machine","Object-state critical rules"],
+    deps:["p4"], blockers:[], prd:"PRD Phase 4" },
+
+  { id:"p6", num:"P6", name:"Learned Action Recognition & Adaptive Scoring", status:"Not Started",
+    purpose:"Learn acceptable execution patterns from data and recognize action meaning.",
+    start:null, end:null, endAssumed:false,
+    entry:["A labelled, participant-separated dataset exists."],
+    exit:[
+      {t:"The learned model outperforms the deterministic baseline on a held-out, participant-separated test set.", met:null, evi:"Not started"},
+      {t:"Model confidence is calibrated and low-confidence cases are routed for review.", met:null, evi:"Not started"},
+      {t:"Deterministic measurements remain available for explanation.", met:null, evi:"Not started"},
+      {t:"No model is promoted solely because it improves average accuracy while increasing critical false passes.", met:null, evi:"Not started"}
+    ],
+    deliverables:["Participant-separated dataset","Temporal action-recognition prototype","Confidence calibration & review routing"],
+    deps:["p5"], blockers:["Dataset collection not begun — PRD calls this effort dataset-dependent"], prd:"PRD Phase 5" },
+
+  { id:"p7", num:"P7", name:"Real-Time Coaching & Deployment Expansion", status:"Not Started",
+    purpose:"Provide feedback during performance and prepare the platform for additional devices.",
+    start:null, end:null, endAssumed:false,
+    entry:["Offline scoring is trusted and validated by domain experts."],
+    exit:[
+      {t:"Real-time feedback is suppressible during stages where interruption could be distracting or unsafe.", met:null, evi:"Not started"},
+      {t:"Safety-critical feedback rules carry documented domain-expert approval.", met:null, evi:"Not started — no domain expert is engaged"}
+    ],
+    deliverables:["In-task real-time feedback with suppression rules","API separation for additional clients","Optional RGB-D / multi-camera input"],
+    deps:["p6"], blockers:[], prd:"PRD Phase 6" }
+],
+
+/* ------------------------------------------------------------ MILESTONES -- */
+milestones: [
+  { id:"M0", name:"Camera validation & skeleton preview", phase:"p0", effort:"2–4 days",
+    target:"2026-09-09", targetAssumed:false, actual:"2026-09-09", status:"Complete", confidence:"Confirmed",
+    variance:"On time", deps:[],
+    note:"Delivered, but two Phase 0 exit criteria remain unmet — coverage and hand-identity stability. Counted complete on deliverables, not on exit criteria." },
+  { id:"M1", name:"Session recording, storage & replay", phase:"p1", effort:"1–2 weeks",
+    target:"2026-09-09", targetAssumed:false, actual:"2026-09-09", status:"Complete", confidence:"Confirmed",
+    variance:"Ahead of the 1–2 week estimate", deps:["M0"],
+    note:"12 sessions recorded and replayable. Evidence: data/motion_mentor.db, data/recordings/." },
+  { id:"M2", name:"Normalization, features, DTW & baseline scoring", phase:"p2", effort:"2–3 weeks",
+    target:"2026-09-09", targetAssumed:false, actual:"2026-09-09", status:"Complete", confidence:"Confirmed",
+    variance:"Ahead of the 2–3 week estimate", deps:["M1"],
+    note:"Commits 0b7bc22 and 378ea67. 21 assessments produced." },
+  { id:"M3", name:"Expert reference builder & feedback visualization", phase:"p2", effort:"2–3 weeks",
+    target:"2026-09-09", targetAssumed:false, actual:"2026-09-09", status:"Complete", confidence:"Confirmed",
+    variance:"Ahead of estimate", deps:["M2"],
+    note:"Builder works, but every profile it has produced so far used a single take. The variability envelope it is designed to compute has never actually been exercised." },
+  { id:"M4", name:"Training interface & performance history", phase:"p3", effort:"2–3 weeks",
+    target:"2026-09-09", targetAssumed:false, actual:"2026-09-09", status:"Complete", confidence:"Confirmed",
+    variance:"Ahead of estimate", deps:["M3"],
+    note:"Built as a web dashboard rather than the specified PySide6 desktop app (DEC-05)." },
+  { id:"MVP", name:"MVP Definition of Done (PRD §21)", phase:"p4", effort:"Not estimated in PRD",
+    target:"2026-10-07", targetAssumed:true, actual:null, status:"At Risk", confidence:"Low",
+    variance:"No baseline to vary from — this target is derived, not committed", deps:["M4"],
+    note:"Five of the ten PRD §21 conditions are unmet: five expert demonstrations, a versioned multi-take reference, evidence-linked reliability, and validated scoring. Target date is projected from the PRD's own effort estimates, not from a commitment." },
+  { id:"M5", name:"Tool / component proof of concept", phase:"p5", effort:"3–5 weeks",
+    target:"2026-11-11", targetAssumed:true, actual:null, status:"Not Started", confidence:"Low",
+    variance:"Not scheduled against a baseline", deps:["MVP"],
+    note:"Derived by adding the PRD's 3–5 week estimate to the projected MVP date. Requires YOLO or equivalent, which is not yet a dependency." },
+  { id:"M6", name:"Temporal ML research prototype", phase:"p6", effort:"Dataset-dependent",
+    target:null, targetAssumed:false, actual:null, status:"Not Started", confidence:"Not assessable",
+    variance:"Not scheduled", deps:["M5"],
+    note:"The PRD declines to estimate this: \"Dataset collection and domain validation will dominate later phases.\" Left as Not scheduled deliberately." }
+],
+
+/* ---------------------------------------------------------- WORKSTREAMS -- */
+workstreams: [
+  { id:"capture",  name:"Capture & Hardware",     hue:"blue"   },
+  { id:"cv",       name:"Computer Vision",        hue:"purple" },
+  { id:"signal",   name:"Signal Processing",      hue:"blue"   },
+  { id:"scoring",  name:"Comparison & Scoring",   hue:"purple" },
+  { id:"backend",  name:"Backend & API",          hue:"gray"   },
+  { id:"ui",       name:"Web UI",                 hue:"gray"   },
+  { id:"data",     name:"Data & Storage",         hue:"blue"   },
+  { id:"test",     name:"Testing & Validation",   hue:"green"  },
+  { id:"docs",     name:"Documentation",          hue:"gray"   }
+],
+
+/* ---------------------------------------------------------- WORK ITEMS --- */
+/* status ∈ Backlog | Ready | In Progress | Blocked | Testing | Complete      */
+workItems: [
+  /* --- Sprint 1: capture foundation (PRD §22) ------------------------------ */
+  { id:"CAP-01", t:"Project scaffold, config loader & activity resolution", s:"capture", p:"p0", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Package layout, YAML config loading, and the MotionMentorApp service object that resolves an activity from a path, the database, or configs/activities/.",
+    ac:["A single entry point loads config and returns a usable app object.","Activity resolution falls back sensibly when no activity is named."],
+    deps:[], evi:["src/motion_mentor/app.py:26","configs/default.yaml","pyproject.toml"], n:"" },
+  { id:"CAP-02", t:"Camera enumeration & configuration", s:"capture", p:"p0", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Probe available capture devices, apply resolution / FPS / buffer settings, timestamp every frame monotonically and detect drops.",
+    ac:["Devices can be listed.","Resolution and target FPS are configurable.","Every frame carries a monotonic timestamp."],
+    deps:["CAP-01"], evi:["capture/camera.py:16 enumerate_cameras","capture/camera.py:29 CameraCapture"],
+    n:"Camera-disconnect detection and reconnection (FR-1) are NOT covered here — tracked as HRD-14." },
+  { id:"CAP-03", t:"MediaPipe hand-tracking integration", s:"cv", p:"p0", pri:"Critical", st:"Complete", upd:"2026-09-09",
+    d:"Wrap MediaPipe to emit 21 image landmarks and 21 world landmarks per hand, plus handedness label, confidence, and per-frame latency.",
+    ac:["21 landmarks per detected hand.","Handedness label and score returned.","Per-frame latency measured."],
+    deps:["CAP-02"], evi:["tracking/hand_tracker.py:49","tests/test_hand_tracker.py"],
+    n:"Uses the legacy mp.solutions.hands API, not the Tasks API — see DEC-07." },
+  { id:"CAP-04", t:"Skeleton overlay & capture HUD", s:"capture", p:"p0", pri:"Medium", st:"Complete", upd:"2026-09-09",
+    d:"OpenCV overlay drawing the hand skeleton, capture zone, live telemetry card, recording banner and countdown.",
+    ac:["Skeleton renders over the live preview.","Capture zone and telemetry visible during recording."],
+    deps:["CAP-03"], evi:["capture/hud.py:13 HUDOverlay","tracking/hand_tracker.py:134 draw_hand_skeleton"], n:"" },
+  { id:"CAP-05", t:"Capture-quality diagnostics", s:"capture", p:"p0", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Evaluate each session against thresholds: ≥90% hand coverage, ≥24 median FPS, ≤45 ms p95 latency, with human-readable failure reasons.",
+    ac:["Every session gets a quality summary persisted with it.","Failures name the specific threshold missed."],
+    deps:["CAP-03"], evi:["reporting/quality.py:14 QualityEvaluator","tests/test_quality_report.py","quality_summary_json on all 12 sessions"],
+    n:"The evaluator works correctly — it is what surfaced ISS-05." },
+  { id:"CAP-06", t:"Synchronized MP4 + landmark recording", s:"capture", p:"p1", pri:"Critical", st:"Complete", upd:"2026-09-09",
+    d:"Write video and landmark parquet under one session ID, with an avc1→mp4v codec fallback and optional ffmpeg faststart re-mux.",
+    ac:["Video and landmarks share a session identifier.","Recording failure raises rather than silently producing a partial session."],
+    deps:["CAP-04","DATA-01"], evi:["capture/recorder.py:24 SessionRecorder","storage/files.py:20","tests/test_capture_and_record.py"], n:"" },
+  { id:"CAP-07", t:"Session replay with landmark overlay", s:"capture", p:"p1", pri:"Medium", st:"Complete", upd:"2026-09-09",
+    d:"CLI replay of a recorded session with the landmark overlay drawn back over the video, with optional looping.",
+    ac:["A stored session can be replayed from its ID.","Landmarks align with the video frames."],
+    deps:["CAP-06"], evi:["cli.py:267 cmd_replay"], n:"" },
+
+  /* --- Sprint 2: motion representation (PRD §22) --------------------------- */
+  { id:"REP-01", t:"Pydantic schemas for sessions, landmarks & results", s:"data", p:"p1", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Typed models for Activity, Session, HandLandmarkData, LandmarkFrameRecord, ComponentScores, FeedbackItem, AssessmentResult and ReferenceProfile.",
+    ac:["All persisted structures are typed.","Versions travel with the data."],
+    deps:["CAP-01"], evi:["storage/models.py","tests/test_models.py — 5 tests"], n:"" },
+  { id:"REP-02", t:"One Euro smoothing & short-gap interpolation", s:"signal", p:"p2", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Jitter reduction with a One Euro filter plus bounded interpolation across short tracking gaps; long gaps are deliberately left as gaps.",
+    ac:["Jitter measurably reduced.","Gaps beyond the configured maximum are not interpolated."],
+    deps:["REP-01"], evi:["processing/smoothing.py:30 OneEuroFilter","processing/smoothing.py:85 interpolate_short_gaps","tests/test_smoothing.py — 3 tests"],
+    n:"Hand-rolled rather than SciPy — see DEC-06." },
+  { id:"REP-03", t:"Local hand normalization", s:"signal", p:"p2", pri:"Critical", st:"Complete", upd:"2026-09-09",
+    d:"Map each hand into a canonical frame that is invariant to translation, scale and rotation, so hand size and camera placement do not drive the score.",
+    ac:["Translation invariance verified.","Scale invariance verified."],
+    deps:["REP-02"], evi:["processing/normalization.py:11","tests/test_normalization.py"], n:"" },
+  { id:"REP-04", t:"Global wrist trajectory & palm orientation", s:"signal", p:"p2", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Extract the wrist path through the workspace and palm orientation over time, kept separate from the normalized local hand shape.",
+    ac:["Trajectory extracted independently of local normalization."],
+    deps:["REP-03"], evi:["processing/normalization.py:85 extract_global_trajectory","processing/normalization.py:105"], n:"" },
+  { id:"REP-05", t:"Geometric & kinematic feature extraction", s:"signal", p:"p2", pri:"Critical", st:"Complete", upd:"2026-09-09",
+    d:"Per-frame finger angles and palm orientation, plus session-level velocity and jerk kinematics, written to parquet.",
+    ac:["3D joint angles computed.","Velocity and jerk derived per session."],
+    deps:["REP-04"], evi:["processing/features.py:82,117","tests/test_features.py — 4 tests","tests/test_feature_pipeline.py"],
+    n:"The jerk features here feed the smoothness score that is currently returning 0.0 (ISS-01) — this is the first place to look." },
+  { id:"REP-06", t:"Per-feature diagnostic plots", s:"signal", p:"p2", pri:"Low", st:"Complete", upd:"2026-09-09",
+    d:"Matplotlib plots of extracted features over time, saved beside the feature parquet.",
+    ac:["A session's features can be plotted to a PNG."],
+    deps:["REP-05"], evi:["reporting/plots.py:14","data/features/*_plot.png"], n:"" },
+
+  /* --- Sprint 3: comparison MVP (PRD §22) ---------------------------------- */
+  { id:"CMP-01", t:"Constrained DTW alignment", s:"scoring", p:"p2", pri:"Critical", st:"Complete", upd:"2026-09-09",
+    d:"Sakoe-Chiba banded dynamic time warping with optional per-feature weights, returning a normalized distance, the warp path and the cost matrix.",
+    ac:["Identical sequences align on the diagonal.","A time-stretched repeat still aligns."],
+    deps:["REP-05"], evi:["comparison/dtw.py:21 constrained_dtw","tests/test_dtw.py — 3 tests"],
+    n:"Band ratio defaults to 0.25 with a minimum width of 5 frames." },
+  { id:"CMP-02", t:"Expert reference builder (medoid selection)", s:"scoring", p:"p2", pri:"Critical", st:"Complete", upd:"2026-09-09",
+    d:"Pairwise-DTW medoid selection across expert takes, warping every take onto the medoid grid before building the profile.",
+    ac:["Multiple takes reduce to one canonical grid.","Profile is persisted and versioned."],
+    deps:["CMP-01"], evi:["comparison/reference.py:51 ReferenceProfileBuilder","tests/test_reference.py — 3 tests"],
+    n:"Multi-take selection is unit-tested but has never run on real data — all 3 stored profiles used one take (ISS-02)." },
+  { id:"CMP-03", t:"Variability envelope & minimum tolerances", s:"scoring", p:"p2", pri:"Critical", st:"Complete", upd:"2026-09-09",
+    d:"Mean and standard deviation per feature across expert takes, clamped by a per-feature minimum tolerance so a near-zero spread cannot explode the z-score.",
+    ac:["Envelope computed per feature.","A floor prevents division by a vanishing standard deviation."],
+    deps:["CMP-02"], evi:["comparison/reference.py:36 get_feature_min_tolerance"],
+    n:"The tolerance floor exists but is evidently not sufficient at single-take spreads — stored deviations reach 642.0σ (ISS-03)." },
+  { id:"CMP-04", t:"Component scoring & reliability gating", s:"scoring", p:"p2", pri:"Critical", st:"Complete", upd:"2026-09-09",
+    d:"Six weighted components — pose, trajectory, orientation, timing, smoothness, sequence — mapped from z-score to 0–100 by exponential decay, with a reliability grade attached.",
+    ac:["Components are independently accessible.","Weights are configurable per activity and total 100%."],
+    deps:["CMP-03"], evi:["comparison/scoring.py:47 ScoringEngine","tests/test_scoring.py — 6 tests","21 rows in assessment_results"],
+    n:"Smoothness returns 0.0 on 19 of 21 real assessments despite the unit tests passing (ISS-01)." },
+  { id:"CMP-05", t:"Required checkpoint evaluation & score capping", s:"scoring", p:"p2", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Evaluate the activity's declared checkpoints; a missed critical checkpoint caps the overall score regardless of motion similarity.",
+    ac:["Critical checkpoint failure caps the score.","Checkpoints are declared in activity config, not code."],
+    deps:["CMP-04"], evi:["comparison/scoring.py:180","configs/activities/reach_and_pinch.yaml — 3 checkpoints, 2 critical","tests/test_scoring.py"],
+    n:"No stored assessment has yet recorded a critical failure — critical_failures_json is empty on all 21." },
+  { id:"CMP-06", t:"Ranked plain-language feedback generator", s:"scoring", p:"p2", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Critical failures first, then the top three z-ranked deviations, each with a peak-error timestamp, a measured deviation and a recommendation.",
+    ac:["At least three deviations surfaced.","Each item names a time and a measurable deviation."],
+    deps:["CMP-05"], evi:["comparison/feedback.py:32","tests/test_feedback.py — 3 tests","feedback_json on 21 assessments"],
+    n:"Messages are readable, but the deviation magnitudes they quote are currently not credible (ISS-03)." },
+  { id:"CMP-07", t:"End-to-end comparison pipeline", s:"scoring", p:"p2", pri:"Critical", st:"Complete", upd:"2026-09-09",
+    d:"One orchestrator: load or derive the reference, extract trainee features, align, score, generate feedback, band the result, persist the assessment.",
+    ac:["A single call takes a session ID to a stored assessment.","Interpretation band and reliability are attached."],
+    deps:["CMP-06"], evi:["comparison/pipeline.py:50 compare_attempt_to_reference","cli.py:526 cmd_compare"],
+    n:"Consolidated from scripts/compare_sessions.py in commit 8f621c8 (DEC-08)." },
+
+  /* --- Phase 3: interface -------------------------------------------------- */
+  { id:"UI-01", t:"FastAPI read API", s:"backend", p:"p3", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Thirteen endpoints over activities, sessions, landmarks, features, references, assessments, comparison and video streaming.",
+    ac:["Every stored entity is reachable over HTTP.","Video streaming is path-traversal guarded."],
+    deps:["CMP-07"], evi:["server.py:55-428","tests/test_server.py — 7 tests"],
+    n:"CORS is currently wide open with credentials enabled (ISS-06)." },
+  { id:"UI-02", t:"Synchronized expert / trainee review deck", s:"ui", p:"p3", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Side-by-side video with a master scrubber, phase markers, transport controls, DTW-warp and superimpose toggles, and variable playback speed.",
+    ac:["Both videos scrub from one control.","The DTW warp can be toggled on and off."],
+    deps:["UI-01"], evi:["web/index.html","web/app.js:548-598 transport"], n:"" },
+  { id:"UI-03", t:"Ghost skeleton overlay canvas", s:"ui", p:"p3", pri:"Medium", st:"Complete", upd:"2026-09-09",
+    d:"Expert skeleton drawn over the trainee frame so the difference is visible directly rather than only described.",
+    ac:["Expert and trainee skeletons superimpose in register."],
+    deps:["UI-02"], evi:["web/app.js:662,701","commit aff8a96 — expert playback synced to reference data"], n:"" },
+  { id:"UI-04", t:"Score gauge, component breakdown & feedback panel", s:"ui", p:"p3", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Overall score, the six component scores, and the ranked feedback list, with each item linking to its moment in the timeline.",
+    ac:["Every component score is displayed.","Selecting a feedback item navigates to its interval."],
+    deps:["UI-02"], evi:["web/app.js:422-538"], n:"" },
+  { id:"UI-05", t:"Browser recording upload with ffmpeg transcode", s:"backend", p:"p3", pri:"Medium", st:"Complete", upd:"2026-09-09",
+    d:"getUserMedia + MediaRecorder capture in the browser, uploaded and transcoded server-side to H.264 / yuv420p with faststart.",
+    ac:["A session can be recorded without the CLI.","Missing ffmpeg degrades rather than fails."],
+    deps:["UI-01"], evi:["server.py:223 /api/record_upload","web/app.js:921 startLiveRecording","commit 0053c85"],
+    n:"No automated test covers this path — the browser codec negotiation is untested." },
+  { id:"UI-06", t:"Session history view", s:"ui", p:"p3", pri:"Medium", st:"Complete", upd:"2026-09-09",
+    d:"Table of past attempts with their scores, so improvement over repeated attempts is visible.",
+    ac:["Past assessments are listed and openable."],
+    deps:["UI-04"], evi:["web/app.js:838"], n:"" },
+  { id:"UI-07", t:"Feature timeline chart", s:"ui", p:"p3", pri:"Low", st:"Complete", upd:"2026-09-09",
+    d:"Canvas chart of a selected feature over the aligned timeline, expert against trainee.",
+    ac:["A feature can be charted across both sequences."],
+    deps:["UI-04"], evi:["web/app.js:785"], n:"" },
+
+  /* --- Data & storage ------------------------------------------------------ */
+  { id:"DATA-01", t:"SQLite store for activities, sessions, references & assessments", s:"data", p:"p1", pri:"Critical", st:"Complete", upd:"2026-09-09",
+    d:"Four tables with JSON-encoded nested fields, full CRUD, and latest-reference lookup.",
+    ac:["All four entity types persist and reload.","Latest reference profile is retrievable per activity."],
+    deps:["REP-01"], evi:["storage/database.py:21 DatabaseManager","tests/test_database.py — 3 tests","data/motion_mentor.db"], n:"" },
+  { id:"DATA-02", t:"Parquet landmark & feature storage + JSON export", s:"data", p:"p1", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"Raw landmarks and derived features stored separately as parquet; a session exports to JSON.",
+    ac:["Raw and processed data are independently accessible.","Round-trip preserves values."],
+    deps:["DATA-01"], evi:["storage/files.py:20,78,120,138","tests/test_storage_files.py"],
+    n:"Whether the export includes schema and algorithm versions (FR-7) is unverified — see HRD-12." },
+
+  /* --- Phase 4: hardening -------------------------------------------------- */
+  { id:"HRD-01", t:"Smoothness component returns 0.0 on real assessments", s:"scoring", p:"p4", pri:"Critical", st:"Ready", upd:"2026-09-09",
+    d:"Nineteen of 21 stored assessments score smoothness exactly 0.0, including runs that score 100 on pose, trajectory and orientation. A component weighted at 10% is contributing nothing but a constant penalty.",
+    ac:["Root cause identified in the jerk feature path or the z-score mapping, not patched at the score output.","A known-smooth attempt scores meaningfully above a known-jerky one.","A regression test covers the case."],
+    deps:[], evi:["component_scores_json across 21 rows in assessment_results","processing/features.py:117 kinematics","comparison/scoring.py:29"],
+    n:"Unit tests in test_scoring.py pass, so the defect is in the data reaching the scorer, not the scorer's arithmetic. Start at REP-05." },
+  { id:"HRD-02", t:"Record five or more expert demonstrations of reach_and_pinch", s:"capture", p:"p4", pri:"Critical", st:"Ready", upd:"2026-09-09",
+    d:"The PRD MVP Definition of Done requires at least five expert demonstrations. Every reference built so far used one.",
+    ac:["At least five expert takes recorded.","Each take clears the 90% coverage gate.","Takes are recorded under consistent camera placement."],
+    deps:["HRD-05"], evi:["reference_profiles.total_demonstrations = 1 on all 3 rows"],
+    n:"This is the single highest-leverage item on the board — it unblocks HRD-03 and HRD-06 and is a hard MVP gate." },
+  { id:"HRD-03", t:"Rebuild reference profile from a multi-take variability envelope", s:"scoring", p:"p4", pri:"Critical", st:"Blocked", upd:"2026-09-09", last:5,
+    d:"Run the existing medoid builder over the five-plus takes so the tolerance envelope reflects real expert variation rather than a floor value.",
+    ac:["A profile exists with total_demonstrations ≥ 5.","Per-feature standard deviation is non-degenerate.","Prior assessments remain reproducible against their original profile."],
+    deps:["HRD-02"], evi:["comparison/reference.py:62 build_profile"],
+    n:"Blocked on HRD-02. The builder code is finished and unit-tested; only the input data is missing." },
+  { id:"HRD-04", t:"Deviation z-scores reach 642σ — fix the reported scale", s:"scoring", p:"p4", pri:"High", st:"Ready", upd:"2026-09-09",
+    d:"Stored feedback quotes deviations of 96.7σ and 642.0σ. Whatever the underlying error, a sigma figure in the hundreds is not something a trainee or an instructor can act on.",
+    ac:["Deviation magnitudes are bounded or expressed in physical units.","Feedback text quotes a figure a human can reason about."],
+    deps:["HRD-03"], evi:["feedback_json — \"Deviation: 2947.5 (642.0σ)\"","comparison/reference.py:36 tolerance floor"],
+    n:"Likely a symptom of the single-take envelope, not an independent defect — recheck after HRD-03 before changing scoring code." },
+  { id:"HRD-05", t:"Raise capture coverage above the 90% gate", s:"capture", p:"p4", pri:"High", st:"Ready", upd:"2026-09-09",
+    d:"Six of twelve sessions fall below the Phase 0 detection-coverage floor, as low as 58.7%. Until capture is reliable, no score built on it means anything.",
+    ac:["Ten consecutive recordings clear 90% coverage.","The physical setup that achieved it is documented."],
+    deps:[], evi:["detection_coverage_pct on 12 sessions: 0.0, 58.7, 65.1, 72.7, 83.3, 84.7 failing"],
+    n:"PRD §10 names the likely causes: lighting, glare, motion blur, and hands leaving the marked capture zone. Fix the room before the code." },
+  { id:"HRD-06", t:"Run the PRD §22 seeded-error validation experiment", s:"test", p:"p4", pri:"Critical", st:"Blocked", upd:"2026-09-09", last:0,
+    d:"One expert performs the same five-second movement ten times, plus attempts at half and faster speed, incorrect wrist rotation, incorrect trajectory, and an omitted final pose. The system passes if it tolerates the speed changes while ranking each seeded error into the right component.",
+    ac:["All named variants recorded.","Speed variants do not substantially lower pose or trajectory scores.","Each seeded error is ranked into its intended component."],
+    deps:["HRD-03"], evi:["PRD §22 first development experiment"],
+    n:"This is the project's first genuine proof that the scoring means anything. Nothing downstream should be trusted before it runs." },
+  { id:"HRD-07", t:"Review reliability gating — 17 of 21 assessments read low", s:"scoring", p:"p4", pri:"High", st:"Ready", upd:"2026-09-09",
+    d:"Most stored assessments carry reliability \"low\", yet still report a headline score. The PRD is explicit: never report a normal score when required evidence is missing.",
+    ac:["Low reliability visibly suppresses or qualifies the headline score.","The threshold is justified against measured coverage."],
+    deps:["HRD-05"], evi:["reliability on 21 rows: 17 low, 4 high","PRD §15 reliability requirement"], n:"" },
+  { id:"HRD-08", t:"Decouple test_server.py from the live data directory", s:"test", p:"p4", pri:"Medium", st:"Ready", upd:"2026-09-09",
+    d:"Seven server tests assert against whatever happens to be in data/. They pass only because the repository ships populated data; clearing it breaks the suite.",
+    ac:["Server tests run green against an empty data directory.","Fixtures create their own sessions."],
+    deps:[], evi:["tests/test_server.py — asserts len(data) >= 1"], n:"" },
+  { id:"HRD-09", t:"Restrict CORS origins on the local server", s:"backend", p:"p4", pri:"Medium", st:"Ready", upd:"2026-09-09",
+    d:"allow_origins=[\"*\"] together with allow_credentials=True on a server that streams recorded video of a person's hands.",
+    ac:["Origins restricted to the local dashboard.","Credentials setting matched to the restricted origin."],
+    deps:[], evi:["server.py:29-34"],
+    n:"Low exploitability while bound to 127.0.0.1, but the data is biometric and the PRD treats it as sensitive." },
+  { id:"HRD-10", t:"Resolve the unused hand_landmarker.task asset", s:"cv", p:"p4", pri:"Low", st:"Backlog", upd:"2026-09-09",
+    d:"models/hand_landmarker.task ships and is referenced in config, but the tracker uses the legacy solutions API and never loads it. Either adopt the Tasks API or delete the asset and its config keys.",
+    ac:["Either the asset is loaded, or the asset and its config keys are gone."],
+    deps:[], evi:["configs/default.yaml tracking.model_path","tracking/hand_tracker.py:61 uses mp.solutions.hands"],
+    n:"The string \"hand_landmarker.task\" also appears as a model_version literal in recorder.py:173 and server.py:334 — misleading provenance." },
+  { id:"HRD-11", t:"Activity versioning on scored attempts (FR-2)", s:"data", p:"p4", pri:"Medium", st:"Backlog", upd:"2026-09-09",
+    d:"FR-2 requires that an activity change creates a new version once the activity has been used for a scored attempt. Editing, archiving and duplicating activities are also absent.",
+    ac:["Editing a used activity produces a new version rather than mutating it.","Historical assessments still resolve their original activity version."],
+    deps:[], evi:["app.py:69 load_or_create_activity — load and create only"], n:"" },
+  { id:"HRD-12", t:"Confirm exports carry schema and algorithm versions (FR-7)", s:"data", p:"p4", pri:"Medium", st:"Backlog", upd:"2026-09-09",
+    d:"FR-7 states exports shall include schema and algorithm versions. The export function exists; whether it includes them has not been verified.",
+    ac:["A round-tripped export names its schema version and scoring version."],
+    deps:[], evi:["storage/files.py:120 export_session_json","data/*_export.json"],
+    n:"Needs confirmation — do not mark this met without reading an actual export file." },
+  { id:"HRD-13", t:"Session deletion & video retention policy", s:"data", p:"p4", pri:"Medium", st:"Backlog", upd:"2026-09-09",
+    d:"The PRD requires session deletion and configurable video retention, and asks that video and landmarks be clearly identified as sensitive biometric data. Neither exists.",
+    ac:["A session and all its artifacts can be deleted.","Retention is configurable.","Sensitivity is stated in the interface."],
+    deps:[], evi:["PRD §15 privacy and security"], n:"" },
+  { id:"HRD-14", t:"Camera disconnect detection & reconnection (FR-1)", s:"capture", p:"p4", pri:"Medium", st:"Backlog", upd:"2026-09-09",
+    d:"FR-1 requires reporting camera disconnects and allowing reconnection. The capture loop currently detects dropped frames but not a vanished device.",
+    ac:["A disconnected camera is reported, not silently zero-filled.","Reconnection is possible without restarting."],
+    deps:[], evi:["capture/camera.py:76 read"], n:"" },
+  { id:"HRD-15", t:"Measure assessment latency against the under-5-second target", s:"test", p:"p4", pri:"Low", st:"Backlog", upd:"2026-09-09",
+    d:"NFR: post-session assessment under five seconds for a ten-second action. Never measured.",
+    ac:["A timed run against a 10-second recording is recorded as evidence."],
+    deps:[], evi:["PRD §15 performance"], n:"" },
+
+  /* --- Phase 5+ ------------------------------------------------------------ */
+  { id:"CTX-01", t:"Pose / Holistic landmarks for body context", s:"cv", p:"p5", pri:"Medium", st:"Backlog", upd:"2026-09-09",
+    d:"Add body-posture landmarks so hand motion can be interpreted relative to the operator's stance.",
+    ac:["Pose landmarks recorded alongside hand landmarks."], deps:["HRD-06"], evi:["PRD §10 Phase 4"], n:"" },
+  { id:"CTX-02", t:"Tool & component tracking", s:"cv", p:"p5", pri:"High", st:"Backlog", upd:"2026-09-09",
+    d:"Object detection so the system can tell whether the hand touched the correct item, not merely whether it moved correctly.",
+    ac:["Tools and components are detected and tracked.","Tracking confidence feeds result reliability."],
+    deps:["CTX-01"], evi:["PRD §8 — Ultralytics YOLO or equivalent, listed as later"],
+    n:"Would introduce PyTorch and a detection framework — neither is a current dependency." },
+  { id:"CTX-03", t:"Task-stage finite state machine", s:"scoring", p:"p5", pri:"High", st:"Backlog", upd:"2026-09-09",
+    d:"Model the activity as stages with observable entry and completion conditions, so a missing stage fails the attempt outright.",
+    ac:["Each stage has observable entry and exit conditions.","A missing critical stage fails regardless of motion similarity."],
+    deps:["CTX-02"], evi:["configs/activities/reach_and_pinch.yaml already declares 5 stages"],
+    n:"The activity config already names the stages — rest_and_approach, wrist_rotation, pinch, hold, return. Only the state machine is missing." },
+  { id:"CTX-04", t:"Object-state critical rules", s:"scoring", p:"p5", pri:"Medium", st:"Backlog", upd:"2026-09-09",
+    d:"Rules over object state so a motion that looks right but leaves the workpiece wrong is caught.",
+    ac:["An object-state violation caps the score."], deps:["CTX-03"], evi:["PRD §18 — motion looks correct but task fails"], n:"" },
+  { id:"ML-01", t:"Participant-separated dataset collection", s:"test", p:"p6", pri:"High", st:"Backlog", upd:"2026-09-09",
+    d:"Collect a dataset where train and test splits never share a participant, so the model cannot pass by memorizing people.",
+    ac:["Splits are participant-separated by construction."], deps:["CTX-04"], evi:["PRD §18 — model overfits known users"],
+    n:"The PRD declines to estimate this effort. It is the long pole of Phase 6." },
+  { id:"ML-02", t:"Temporal action-recognition prototype", s:"cv", p:"p6", pri:"Medium", st:"Backlog", upd:"2026-09-09",
+    d:"A learned model over the landmark time series, evaluated against the deterministic DTW baseline.",
+    ac:["Beats the deterministic baseline on a held-out participant-separated set.","Deterministic measurements remain available for explanation."],
+    deps:["ML-01"], evi:["PRD §10 Phase 5"], n:"" },
+  { id:"ML-03", t:"Confidence calibration & review routing", s:"scoring", p:"p6", pri:"High", st:"Backlog", upd:"2026-09-09",
+    d:"Calibrate model confidence and route low-confidence attempts to a human rather than scoring them.",
+    ac:["Confidence is calibrated.","Low-confidence attempts are routed for review."],
+    deps:["ML-02"], evi:["PRD §10 Phase 5"],
+    n:"PRD constraint: no model is promoted solely for average accuracy if it increases critical false passes." },
+  { id:"RT-01", t:"Real-time in-task feedback with suppression rules", s:"ui", p:"p7", pri:"Medium", st:"Backlog", upd:"2026-09-09",
+    d:"Feedback during performance, suppressible at stages where an interruption would be distracting or unsafe.",
+    ac:["Feedback is suppressible per stage.","Safety-critical rules carry documented domain-expert approval."],
+    deps:["ML-03"], evi:["PRD §10 Phase 6 safety requirement"],
+    n:"Hard dependency on a domain expert who is not currently engaged." },
+  { id:"RT-02", t:"API separation for additional clients", s:"backend", p:"p7", pri:"Low", st:"Backlog", upd:"2026-09-09",
+    d:"Separate the API cleanly enough that a web, mobile, RealWear or XR client could be added later.",
+    ac:["No client-specific logic remains in the service layer."],
+    deps:["RT-01"], evi:["PRD §10 Phase 6"],
+    n:"XR and mobile are explicit MVP non-goals (PRD §4.2) and are deliberately absent from the hardware matrix." },
+  { id:"RT-03", t:"Optional RGB-D or multi-camera input", s:"capture", p:"p7", pri:"Low", st:"Backlog", upd:"2026-09-09",
+    d:"Depth or multiple synchronized cameras, to reduce occlusion and stabilize spatial measurement.",
+    ac:["A second view can be recorded in sync."], deps:["RT-02"], evi:["PRD §18 — add RGB-D later"], n:"" },
+
+  /* --- Documentation ------------------------------------------------------- */
+  { id:"DOC-01", t:"Product requirements document", s:"docs", p:"p0", pri:"High", st:"Complete", upd:"2026-09-09",
+    d:"952-line PRD covering goals, users, requirements, phases, milestones, risks, metrics and the first development experiment.",
+    ac:["Requirements are identified and traceable."], deps:[], evi:["PRD.md"],
+    n:"Header still reads \"Status: Ready for prototype development\" although four phases have been built." },
+  { id:"DOC-02", t:"Repository README", s:"docs", p:"p0", pri:"Low", st:"Complete", upd:"2026-09-09",
+    d:"Short orientation covering what the system does and how the pipeline fits together.",
+    ac:["A newcomer can tell what the project is."], deps:[], evi:["README.md — 32 lines"], n:"" },
+  { id:"DOC-03", t:"Operator setup & capture guide", s:"docs", p:"p4", pri:"Medium", st:"Backlog", upd:"2026-09-09",
+    d:"Document the physical setup that actually achieves 90% coverage: mount, lighting, capture zone, distance.",
+    ac:["Someone other than the author can reproduce a passing capture from the document alone."],
+    deps:["HRD-05"], evi:[],
+    n:"Should be written from whatever setup finally clears HRD-05, not written in advance." },
+  { id:"DOC-04", t:"Project command center dashboard", s:"docs", p:"p4", pri:"Medium", st:"Complete", upd:"2026-09-09",
+    d:"This dashboard: the authoritative project snapshot, built from the PRD, source tree, test run and runtime database.",
+    ac:["Every status claim is backed by a file, commit, test or database row."],
+    deps:[], evi:["docs/command-center.html"], n:"" }
+],
+
+/* --------------------------------------------------------- ARCHITECTURE -- */
+/* state ∈ impl | planned | external | unused                                 */
+architecture: {
+  note:"Every node names the real file that implements it. Layers read top to bottom as the request path: a client calls the API, which drives capture, perception, processing, comparison, and persistence.",
+  layers: [
+    { name:"Clients", nodes:[
+      { t:"CLI — motion-mentor", f:"cli.py · 10 subcommands", s:"impl" },
+      { t:"Web dashboard", f:"web/index.html · app.js", s:"impl" },
+      { t:"XR / mobile client", f:"PRD §4.2 non-goal · Phase 7", s:"planned" }
+    ]},
+    { name:"API", nodes:[
+      { t:"FastAPI application", f:"server.py:22 · uvicorn 127.0.0.1:8000", s:"impl" },
+      { t:"REST surface", f:"server.py · 13 endpoints under /api", s:"impl" }
+    ]},
+    { name:"Capture", nodes:[
+      { t:"CameraCapture", f:"capture/camera.py:29", s:"impl" },
+      { t:"SyntheticCamera", f:"capture/camera.py:101", s:"impl" },
+      { t:"SessionRecorder", f:"capture/recorder.py:24", s:"impl" },
+      { t:"HUDOverlay", f:"capture/hud.py:13", s:"impl" }
+    ]},
+    { name:"Perception", nodes:[
+      { t:"HandTracker — 21 landmarks/hand", f:"tracking/hand_tracker.py:49", s:"impl" },
+      { t:"hand_landmarker.task", f:"models/ · referenced in config, never loaded", s:"unused" }
+    ]},
+    { name:"Processing", nodes:[
+      { t:"Smoothing — One Euro", f:"processing/smoothing.py:30", s:"impl" },
+      { t:"Normalization", f:"processing/normalization.py:11", s:"impl" },
+      { t:"Feature extraction", f:"processing/features.py:82", s:"impl" }
+    ]},
+    { name:"Comparison", nodes:[
+      { t:"Constrained DTW", f:"comparison/dtw.py:21", s:"impl" },
+      { t:"Reference builder", f:"comparison/reference.py:51", s:"impl" },
+      { t:"Scoring engine", f:"comparison/scoring.py:47", s:"impl" },
+      { t:"Feedback generator", f:"comparison/feedback.py:32", s:"impl" },
+      { t:"Pipeline orchestrator", f:"comparison/pipeline.py:50", s:"impl" }
+    ]},
+    { name:"Storage", nodes:[
+      { t:"SQLite — 4 tables", f:"storage/database.py:21", s:"impl" },
+      { t:"Parquet + JSON export", f:"storage/files.py:20", s:"impl" },
+      { t:"Pydantic schemas", f:"storage/models.py", s:"impl" }
+    ]},
+    { name:"External", nodes:[
+      { t:"MediaPipe 0.10.20–21", f:"legacy mp.solutions.hands", s:"external" },
+      { t:"OpenCV ≥ 4.8", f:"capture + replay + drawing", s:"external" },
+      { t:"ffmpeg", f:"optional · shutil.which guarded", s:"external" },
+      { t:"PyTorch / YOLO", f:"Phase 6–7 · not a dependency", s:"planned" }
+    ]}
+  ]
+},
+
+/* ------------------------------------------------------------- HARDWARE -- */
+hardware: [
+  { comp:"USB webcam (device_id 0)", fw:"OS UVC driver", mod:"capture/camera.py — CameraCapture",
+    iface:"OpenCV VideoCapture, CAP_PROP_FRAME_WIDTH/HEIGHT/FPS/BUFFERSIZE",
+    data:"1280×720 BGR frames at a 30 FPS target", st:"Integrated", test:"Partial",
+    lim:"No disconnect detection or reconnection (FR-1 gap, HRD-14). Exposure is auto-only. Six of twelve recorded sessions fell below the 90% detection-coverage gate.",
+    owner:"Allen Cass" },
+  { comp:"Synthetic camera (no hardware)", fw:"n/a", mod:"capture/camera.py:101 — SyntheticCamera",
+    iface:"In-process, same read() contract as CameraCapture",
+    data:"Procedurally animated test frames", st:"Integrated", test:"Passed",
+    lim:"Produces no hand, so quality evaluation of a synthetic session reports 0.0% coverage — two such sessions are in the database and should not be read as capture failures.",
+    owner:"Allen Cass" },
+  { comp:"Browser camera (MediaRecorder)", fw:"Chromium / WebKit media stack", mod:"web/app.js:921 + server.py:223",
+    iface:"getUserMedia → MediaRecorder → base64 POST /api/record_upload",
+    data:"webm/vp9 or mp4 blob, transcoded server-side", st:"Integrated", test:"Not Run",
+    lim:"Mimetype negotiation differs by browser (vp9 attempted, mp4 fallback). No automated test covers this path.",
+    owner:"Allen Cass" },
+  { comp:"ffmpeg (optional transcode)", fw:"System binary, version unpinned", mod:"capture/recorder.py:138 + server.py:254",
+    iface:"subprocess — libx264, yuv420p, +faststart, 15s timeout",
+    data:"MP4 re-mux for reliable browser playback", st:"Integrated (optional)", test:"Not Run",
+    lim:"Absent ffmpeg degrades silently to the raw writer output. Separately, the video writer falls back from the avc1 fourcc to mp4v, which some browsers will not play.",
+    owner:"Allen Cass" },
+  { comp:"MediaPipe hand model asset", fw:"models/hand_landmarker.task (float16)", mod:"None — no code loads it",
+    iface:"n/a", data:"n/a", st:"Not Integrated", test:"Not Run",
+    lim:"Referenced by configs/default.yaml tracking.model_path but never read; the tracker uses the legacy solutions API instead. The filename also appears as a model_version string literal, giving stored sessions a misleading provenance.",
+    owner:"Allen Cass" }
+],
+
+/* --------------------------------------------------------- REQUIREMENTS -- */
+/* impl ∈ Implemented | Partial | Not Implemented | Needs confirmation        */
+requirements: [
+  { id:"FR-1", d:"Camera configuration — list devices, select resolution and frame rate, remember the last valid configuration, report disconnects and allow reconnection.",
+    type:"Functional", pri:"High", src:"PRD §11", comp:"capture/camera.py", items:["CAP-02","HRD-14"],
+    impl:"Partial", val:"Inspection", test:null,
+    evi:"enumerate_cameras and CameraCapture exist; disconnect detection and configuration persistence do not." },
+  { id:"FR-2", d:"Activity management — create, edit, archive and duplicate activities; version an activity once it has been used for a scored attempt.",
+    type:"Functional", pri:"High", src:"PRD §11", comp:"app.py:69 · storage/database.py", items:["CAP-01","HRD-11"],
+    impl:"Partial", val:"Inspection", test:"tests/test_database.py",
+    evi:"Create and load work. Edit, archive, duplicate and use-triggered versioning are absent." },
+  { id:"FR-3", d:"Recording — record expert and trainee sessions with monotonic timestamps and a shared session identifier; a recording failure must not silently produce a score.",
+    type:"Functional", pri:"Critical", src:"PRD §11", comp:"capture/recorder.py", items:["CAP-06"],
+    impl:"Implemented", val:"Automated test", test:"tests/test_capture_and_record.py",
+    evi:"SessionRecorder raises if neither codec opens; 12 sessions recorded with shared IDs across video, parquet and database." },
+  { id:"FR-4", d:"Reference management — include or exclude expert takes, display variability, and keep published profiles immutable so edits create a new version.",
+    type:"Functional", pri:"Critical", src:"PRD §11", comp:"comparison/reference.py", items:["CMP-02","CMP-03","HRD-03"],
+    impl:"Partial", val:"Automated test", test:"tests/test_reference.py",
+    evi:"Builder and versioning exist. Take inclusion/exclusion and variability display do not, and immutability enforcement is unverified. No profile has ever used more than one take." },
+  { id:"FR-5", d:"Comparison — compare an attempt with the appropriate reference and return component scores, alignment, deviations, reliability and detected critical failures.",
+    type:"Functional", pri:"Critical", src:"PRD §11", comp:"comparison/pipeline.py · scoring.py", items:["CMP-04","CMP-07"],
+    impl:"Implemented", val:"Automated test", test:"tests/test_scoring.py · test_dtw.py",
+    evi:"21 assessments stored with all six components, reliability and an interpretation band. Note that the smoothness component is currently degenerate (ISS-01)." },
+  { id:"FR-6", d:"Review — replay synchronized expert and trainee sequences, navigate from a feedback item to its interval, and distinguish tracking problems from performance errors.",
+    type:"Functional", pri:"High", src:"PRD §11", comp:"web/app.js · server.py", items:["UI-02","UI-04"],
+    impl:"Partial", val:"Manual inspection", test:"tests/test_server.py (API only)",
+    evi:"Synchronized replay and interval navigation work. The tracking-versus-performance distinction is carried only by a coarse reliability grade, which currently reads low on 17 of 21 assessments." },
+  { id:"FR-7", d:"Export — export landmarks, features, scores and summary results, including schema and algorithm versions.",
+    type:"Functional", pri:"Medium", src:"PRD §11", comp:"storage/files.py:120", items:["DATA-02","HRD-12"],
+    impl:"Needs confirmation", val:"Inspection", test:"tests/test_storage_files.py",
+    evi:"Export exists and round-trips. Whether the emitted JSON names its schema and algorithm versions has not been verified." },
+  { id:"NFR-P1", d:"Target capture: 1280×720 at 30 FPS.", type:"Performance", pri:"High", src:"PRD §15",
+    comp:"configs/default.yaml · capture/camera.py", items:["CAP-02"], impl:"Implemented", val:"Measurement", test:"Capture-quality evaluator",
+    evi:"Configured at 1280×720/30; measured effective FPS 30.0–30.4 on real captures." },
+  { id:"NFR-P2", d:"Landmark processing of at least 24 FPS on the development machine.", type:"Performance", pri:"High", src:"PRD §15",
+    comp:"tracking/hand_tracker.py", items:["CAP-03","CAP-05"], impl:"Implemented", val:"Measurement", test:"quality_summary on 12 sessions",
+    evi:"Met on every real capture. One session measured 15.4 FPS with 70 dropped frames — a browser-upload run, not a direct capture." },
+  { id:"NFR-P3", d:"Preview latency under 150 ms.", type:"Performance", pri:"Medium", src:"PRD §15",
+    comp:"tracking/hand_tracker.py:68", items:["CAP-03"], impl:"Implemented", val:"Measurement", test:"quality_summary on 12 sessions",
+    evi:"Median per-frame latency 12.0–22.3 ms; p95 up to 25.3 ms. Comfortably inside the target." },
+  { id:"NFR-P4", d:"Post-session assessment under 5 seconds for a 10-second action.", type:"Performance", pri:"Medium", src:"PRD §15",
+    comp:"comparison/pipeline.py", items:["HRD-15"], impl:"Not Implemented", val:"Measurement", test:null,
+    evi:"Never measured. No timing is recorded on any assessment." },
+  { id:"NFR-R1", d:"Atomic writes — write to a temporary file, then rename.", type:"Reliability", pri:"Medium", src:"PRD §15",
+    comp:"storage/files.py", items:["DATA-02"], impl:"Needs confirmation", val:"Inspection", test:null,
+    evi:"Not verified in the source read. Do not mark met without checking the write path." },
+  { id:"NFR-R2", d:"Detect camera disconnects and interrupted recordings.", type:"Reliability", pri:"High", src:"PRD §15",
+    comp:"capture/camera.py", items:["HRD-14"], impl:"Not Implemented", val:"Inspection", test:null,
+    evi:"Dropped frames are counted; a vanished device is not detected." },
+  { id:"NFR-R3", d:"Store algorithm, model, activity and reference versions with every score.", type:"Reliability", pri:"High", src:"PRD §15",
+    comp:"storage/models.py · database.py", items:["REP-01","DATA-01"], impl:"Partial", val:"Database inspection", test:"tests/test_database.py",
+    evi:"scoring_version, activity_version, reference_profile_id and model_version are all persisted. But model_version is a hard-coded filename string, not the model actually used (HRD-10)." },
+  { id:"NFR-S1", d:"Local-first — no cloud synchronization without explicit configuration and consent.", type:"Security", pri:"High", src:"PRD §15",
+    comp:"server.py:449", items:["UI-01"], impl:"Implemented", val:"Inspection", test:null,
+    evi:"uvicorn binds 127.0.0.1:8000. No network egress anywhere in the source. Separately, CORS is wide open on that local server (ISS-06)." },
+  { id:"NFR-S2", d:"Clearly identify video and landmarks as potentially sensitive biometric and behavioral data.", type:"Security", pri:"Medium", src:"PRD §15",
+    comp:"—", items:["HRD-13"], impl:"Not Implemented", val:"Inspection", test:null,
+    evi:"No such labeling appears in the interface, the README or the export format." },
+  { id:"NFR-S3", d:"Session deletion and configurable video retention.", type:"Security", pri:"Medium", src:"PRD §15",
+    comp:"—", items:["HRD-13"], impl:"Not Implemented", val:"Inspection", test:null,
+    evi:"No delete path exists in the database manager, the CLI or the API." },
+  { id:"NFR-M1", d:"Separate UI, capture, processing, scoring and persistence; typed interfaces and Pydantic schemas throughout.", type:"Maintainability", pri:"Medium", src:"PRD §15",
+    comp:"src/motion_mentor/*", items:["REP-01","CMP-07"], impl:"Implemented", val:"Inspection", test:"48 tests across 15 files",
+    evi:"Eight subpackages with clean separation; all persisted structures are Pydantic models. Subpackages use implicit namespace packages (no __init__.py)." }
+],
+
+/* -------------------------------------------------------------- TESTING -- */
+/* st ∈ Passed | Failed | Blocked | Not Run                                   */
+tests: [
+  { id:"UT-01", n:"Pydantic model defaults & session lifecycle", type:"Unit", req:"NFR-R3", env:"pytest, local",
+    exp:"Models validate and round-trip with correct defaults", act:"5 tests passed", st:"Passed", evi:"tests/test_models.py", date:"2026-09-09" },
+  { id:"UT-02", n:"SQLite CRUD — activities, sessions, references, assessments", type:"Unit", req:"FR-2", env:"pytest, tmp SQLite",
+    exp:"All four entity types persist and reload", act:"3 tests passed", st:"Passed", evi:"tests/test_database.py", date:"2026-09-09" },
+  { id:"UT-03", n:"Parquet and JSON round-trip", type:"Unit", req:"FR-7", env:"pytest, tmp dir",
+    exp:"Values survive a write/read cycle", act:"2 tests passed", st:"Passed", evi:"tests/test_storage_files.py", date:"2026-09-09" },
+  { id:"UT-04", n:"One Euro smoothing & gap interpolation", type:"Unit", req:"—", env:"pytest, synthetic signal",
+    exp:"Jitter reduced; long gaps rejected", act:"3 tests passed", st:"Passed", evi:"tests/test_smoothing.py", date:"2026-09-09" },
+  { id:"UT-05", n:"Hand normalization invariance", type:"Unit", req:"—", env:"pytest, synthetic landmarks",
+    exp:"Translation and scale invariant", act:"2 tests passed", st:"Passed", evi:"tests/test_normalization.py", date:"2026-09-09" },
+  { id:"UT-06", n:"Feature extraction — angles, orientation, kinematics", type:"Unit", req:"—", env:"pytest",
+    exp:"3D angles and palm orientation correct; kinematics derived", act:"4 tests passed", st:"Passed", evi:"tests/test_features.py", date:"2026-09-09" },
+  { id:"UT-07", n:"Constrained DTW alignment", type:"Unit", req:"FR-5", env:"pytest, synthetic sequences",
+    exp:"Identity aligns on the diagonal; a time-stretched repeat still aligns", act:"3 tests passed", st:"Passed", evi:"tests/test_dtw.py", date:"2026-09-09" },
+  { id:"UT-08", n:"Reference profile building & medoid selection", type:"Unit", req:"FR-4", env:"pytest, synthetic takes",
+    exp:"Multi-demo medoid chosen; minimum tolerance applied", act:"3 tests passed", st:"Passed", evi:"tests/test_reference.py", date:"2026-09-09",
+    note:"Multi-take selection is covered here but has never run against real recordings (ISS-02)." },
+  { id:"UT-09", n:"Component scoring, error seeding & checkpoint capping", type:"Unit", req:"FR-5", env:"pytest, synthetic attempt",
+    exp:"Identical attempt scores high; a wrist-rotation error is penalized; a critical checkpoint caps the score", act:"6 tests passed", st:"Passed", evi:"tests/test_scoring.py", date:"2026-09-09",
+    note:"These pass while the smoothness component returns 0.0 on real data — the unit fixtures do not reproduce the production feature path." },
+  { id:"UT-10", n:"Feedback ranking & critical-failure priority", type:"Unit", req:"FR-5", env:"pytest",
+    exp:"Critical failures first, then top-3 by z-score with peak timestamps", act:"3 tests passed", st:"Passed", evi:"tests/test_feedback.py", date:"2026-09-09" },
+  { id:"UT-11", n:"Capture-quality evaluator", type:"Unit", req:"NFR-P2", env:"pytest",
+    exp:"Pass and coverage-fail cases both classified correctly", act:"2 tests passed", st:"Passed", evi:"tests/test_quality_report.py", date:"2026-09-09" },
+  { id:"IT-01", n:"Feature pipeline integration — smooth → normalize → features → parquet", type:"Integration", req:"—", env:"pytest",
+    exp:"Full chain produces a readable feature table", act:"1 test passed", st:"Passed", evi:"tests/test_feature_pipeline.py", date:"2026-09-09" },
+  { id:"IT-02", n:"Capture and record end to end", type:"Integration", req:"FR-3", env:"pytest, SyntheticCamera",
+    exp:"A session records and the written MP4 reopens in OpenCV", act:"2 tests passed", st:"Passed", evi:"tests/test_capture_and_record.py", date:"2026-09-09" },
+  { id:"IT-03", n:"REST API surface", type:"Integration", req:"FR-6", env:"pytest + httpx TestClient",
+    exp:"Activities, sessions, landmarks, references, assessments, video and static index all respond", act:"7 tests passed", st:"Passed", evi:"tests/test_server.py", date:"2026-09-09",
+    note:"Asserts against the live data/ directory rather than fixtures — passes only because the repository ships populated data (ISS-07, HRD-08)." },
+  { id:"HW-01", n:"MediaPipe inference on real frames", type:"Hardware / Model", req:"—", env:"pytest, MediaPipe 0.10.x",
+    exp:"Inference runs and the skeleton draws without error", act:"2 tests passed", st:"Passed", evi:"tests/test_hand_tracker.py", date:"2026-09-09" },
+  { id:"HW-02", n:"Capture quality — hand-detection coverage across 12 recorded sessions", type:"Hardware / Field", req:"NFR-P2", env:"USB webcam, live capture",
+    exp:"≥90% of frames contain the expected hand", act:"6 of 12 sessions failed: 0.0%, 0.0%, 58.7%, 65.1%, 72.7%, 83.3%, 84.7% (two 0.0% runs are synthetic-camera sessions)", st:"Failed",
+    evi:"quality_summary_json, data/motion_mentor.db", date:"2026-09-09" },
+  { id:"HW-03", n:"Capture throughput", type:"Hardware / Field", req:"NFR-P2", env:"USB webcam, live capture",
+    exp:"≥24 FPS median processing", act:"30.0–30.4 FPS on real captures; one browser-upload session at 15.4 FPS with 70 dropped frames", st:"Passed",
+    evi:"effective_fps across 12 sessions", date:"2026-09-09" },
+  { id:"HW-04", n:"Preview latency", type:"Hardware / Field", req:"NFR-P3", env:"USB webcam, live capture",
+    exp:"<150 ms", act:"Median 12.0–22.3 ms, p95 up to 25.3 ms", st:"Passed",
+    evi:"median_latency_ms / p95_latency_ms across 12 sessions", date:"2026-09-09" },
+  { id:"VAL-01", n:"Seeded-error validation protocol (PRD §22)", type:"Model evaluation", req:"FR-5", env:"One expert, ten repeats plus five seeded variants",
+    exp:"Speed variants do not substantially lower pose or trajectory scores; each seeded error ranks into its intended component", act:"Not run", st:"Not Run",
+    evi:"Blocked on HRD-03 — no multi-take reference exists", date:null,
+    note:"This is the single most important untested item on the project. Nothing about scoring correctness is currently proven against real data." },
+  { id:"VAL-02", n:"Assessment latency for a 10-second action", type:"Performance", req:"NFR-P4", env:"Local desktop",
+    exp:"<5 seconds", act:"Not measured", st:"Not Run", evi:"HRD-15", date:null },
+  { id:"VAL-03", n:"Usability — a new user completes an attempt unassisted", type:"Usability", req:"FR-6", env:"Pilot session",
+    exp:"≥80% of pilot users complete an attempt without assistance (PRD §19)", act:"Not run — no pilot has taken place", st:"Not Run", evi:"PRD §19 product metrics", date:null },
+  { id:"VAL-04", n:"Instructor agreement on pass / review classification", type:"Field", req:"FR-5", env:"Two or more qualified reviewers",
+    exp:"≥85% agreement (PRD §19)", act:"Not run — no domain reviewer is engaged", st:"Not Run", evi:"PRD §17 human validation", date:null },
+  { id:"VAL-05", n:"Security review of the local server surface", type:"Security", req:"NFR-S1", env:"Code inspection",
+    exp:"No unnecessary exposure of biometric data", act:"Not run; open CORS with credentials already identified by inspection", st:"Not Run", evi:"ISS-06", date:null }
+],
+
+/* ----------------------------------------------------------------- RISKS -- */
+/* Descriptions and mitigations are verbatim from PRD §18. The probability and
+   impact ratings are NOT in the PRD — they were assigned here and every one
+   carries assumed:true.                                                       */
+risks: [
+  { id:"R-01", d:"Hand occlusion by tools or components", cat:"Technical", prob:"High", imp:"High",
+    impact:"Missing or inaccurate landmarks",
+    mit:"Camera guidance, alternate view, confidence gating, later multi-camera or depth support",
+    owner:"Allen Cass", st:"Open", rel:"HRD-05 · CTX-02", found:"2026-09-09", res:null, assumed:true },
+  { id:"R-02", d:"Camera moves between sessions", cat:"Operational", prob:"Medium", imp:"High",
+    impact:"Invalid global trajectory comparison",
+    mit:"Stable mount, saved setup image, workspace calibration",
+    owner:"Allen Cass", st:"Open", rel:"HRD-02 · DOC-03", found:"2026-09-09", res:null, assumed:true },
+  { id:"R-03", d:"Different execution speeds", cat:"Technical", prob:"High", imp:"Low",
+    impact:"False penalties",
+    mit:"Constrained DTW and an independent timing score",
+    owner:"Allen Cass", st:"Mitigated", rel:"CMP-01", found:"2026-09-09",
+    res:"Constrained DTW is implemented and unit-tested for time-stretch tolerance. Still to be confirmed on real recordings by VAL-01.", assumed:true },
+  { id:"R-04", d:"A single expert take is unrepresentative", cat:"Technical", prob:"High", imp:"High",
+    impact:"Brittle scoring",
+    mit:"Use multiple expert takes and variability envelopes",
+    owner:"Allen Cass", st:"Realized", rel:"ISS-02 · HRD-02 · HRD-03", found:"2026-09-09",
+    res:"This risk has already occurred. All three stored reference profiles were built from one take.", assumed:true },
+  { id:"R-05", d:"Estimated monocular depth is unstable", cat:"Technical", prob:"Medium", imp:"Medium",
+    impact:"Incorrect 3D conclusions",
+    mit:"Favor normalized angles and relative geometry; calibrate the workspace; add RGB-D later",
+    owner:"Allen Cass", st:"Open", rel:"REP-03 · RT-03", found:"2026-09-09", res:null, assumed:true },
+  { id:"R-06", d:"Left / right hand identity swaps", cat:"Technical", prob:"Medium", imp:"High",
+    impact:"Corrupt sequence",
+    mit:"Temporal identity tracking and handedness consistency checks",
+    owner:"Allen Cass", st:"Open", rel:"CAP-03", found:"2026-09-09",
+    res:null, assumed:true, note:"A Phase 0 exit criterion covers this and has never been measured." },
+  { id:"R-07", d:"Motion looks correct but the task fails", cat:"Product", prob:"High", imp:"High",
+    impact:"False pass",
+    mit:"Add checkpoints, object state, tool interaction, and critical rules",
+    owner:"Allen Cass", st:"Open", rel:"CMP-05 · CTX-03", found:"2026-09-09",
+    res:null, assumed:true, note:"Checkpoint capping exists; object state does not. This is the whole rationale for Phase 5." },
+  { id:"R-08", d:"A weighted score hides a critical error", cat:"Safety", prob:"Medium", imp:"High",
+    impact:"Unsafe interpretation",
+    mit:"Required checkpoints and score caps",
+    owner:"Allen Cass", st:"Open", rel:"CMP-05", found:"2026-09-09",
+    res:null, assumed:true, note:"Capping is implemented, but no stored assessment has yet recorded a critical failure, so the cap has never fired on real data." },
+  { id:"R-09", d:"The model overfits known users", cat:"Technical", prob:"Medium", imp:"Medium",
+    impact:"Poor generalization",
+    mit:"Participant-separated evaluation and diverse recordings",
+    owner:"Allen Cass", st:"Open", rel:"ML-01", found:"2026-09-09", res:null, assumed:true,
+    note:"Not yet live — no model exists. Carried forward for Phase 6." },
+  { id:"R-10", d:"Feedback is too technical", cat:"Product", prob:"Medium", imp:"Medium",
+    impact:"Low usability",
+    mit:"Plain-language coaching linked to visual evidence",
+    owner:"Allen Cass", st:"Open", rel:"CMP-06 · HRD-04 · VAL-03", found:"2026-09-09",
+    res:null, assumed:true, note:"Currently realized in a specific way: feedback quotes deviations of 642.0σ, which no trainee can act on." }
+],
+
+/* ---------------------------------------------------------------- ISSUES -- */
+/* Observed defects and gaps, each traceable to a file, a test, or a database
+   row. Distinct from risks: these have already happened.                      */
+issues: [
+  { id:"ISS-01", d:"Smoothness component scores exactly 0.0 on 19 of 21 stored assessments, including runs scoring 100 on pose, trajectory and orientation.",
+    cat:"Scoring", sev:"Critical", st:"Open", owner:"Allen Cass", rel:"HRD-01 · CMP-04 · REP-05",
+    found:"2026-09-09", evi:"component_scores_json across assessment_results", res:null,
+    why:"A component carrying 10% of the weight is contributing a flat penalty to every score. Unit tests pass, so the fault is in the feature data reaching the scorer." },
+  { id:"ISS-02", d:"Every reference profile was built from a single expert demonstration. The PRD MVP Definition of Done requires at least five.",
+    cat:"Data", sev:"Critical", st:"Open", owner:"Allen Cass", rel:"HRD-02 · HRD-03 · R-04",
+    found:"2026-09-09", evi:"reference_profiles.total_demonstrations = 1 on all 3 rows", res:null,
+    why:"The variability envelope the whole scoring model rests on has never been computed from real variation. This blocks the MVP milestone and the validation experiment." },
+  { id:"ISS-03", d:"Stored feedback quotes deviation magnitudes of 96.7σ and 642.0σ.",
+    cat:"Scoring", sev:"High", st:"Open", owner:"Allen Cass", rel:"HRD-04 · CMP-03",
+    found:"2026-09-09", evi:"feedback_json — \"Deviation: 2947.5 (642.0σ)\"", res:null,
+    why:"Consistent with dividing by a near-zero standard deviation from a single-take envelope. Recheck after ISS-02 is fixed rather than patching the scoring code first." },
+  { id:"ISS-04", d:"Seventeen of 21 assessments carry reliability \"low\" but still report a headline score.",
+    cat:"Scoring", sev:"High", st:"Open", owner:"Allen Cass", rel:"HRD-07",
+    found:"2026-09-09", evi:"reliability column across assessment_results", res:null,
+    why:"PRD §15 is explicit: never report a normal score when required evidence is missing. The system currently does." },
+  { id:"ISS-05", d:"Hand-detection coverage falls below the 90% gate on six of twelve recorded sessions, as low as 58.7%.",
+    cat:"Capture", sev:"High", st:"Open", owner:"Allen Cass", rel:"HRD-05 · R-01 · R-02",
+    found:"2026-09-09", evi:"detection_coverage_pct across 12 sessions", res:null,
+    why:"Phase 0's primary exit criterion. Two of the failing sessions used the synthetic camera and should be discounted; four are genuine capture failures." },
+  { id:"ISS-06", d:"CORS is configured with allow_origins=[\"*\"] and allow_credentials=True on the server that streams recorded hand video.",
+    cat:"Security", sev:"Medium", st:"Open", owner:"Allen Cass", rel:"HRD-09",
+    found:"2026-09-09", evi:"server.py:29-34", res:null,
+    why:"Low exploitability while bound to 127.0.0.1, but the payload is biometric data the PRD asks to be treated as sensitive." },
+  { id:"ISS-07", d:"tests/test_server.py asserts against the live data/ directory instead of fixtures.",
+    cat:"Testing", sev:"Medium", st:"Open", owner:"Allen Cass", rel:"HRD-08",
+    found:"2026-09-09", evi:"tests/test_server.py — len(data) >= 1", res:null,
+    why:"Seven tests pass only because the repository happens to ship populated data. A clean checkout or a cleared data directory turns them red for the wrong reason." },
+  { id:"ISS-08", d:"models/hand_landmarker.task is shipped and referenced in config but never loaded by any code path.",
+    cat:"Housekeeping", sev:"Low", st:"Open", owner:"Allen Cass", rel:"HRD-10",
+    found:"2026-09-09", evi:"configs/default.yaml vs tracking/hand_tracker.py:61", res:null,
+    why:"The filename is also stored as model_version on every session, giving the recorded data a provenance that does not match the model actually used." }
+],
+
+/* ------------------------------------------------------------- DECISIONS -- */
+/* st ∈ Proposed | Accepted | Superseded | Rejected. A superseded decision is
+   never deleted — it keeps its record and links to what replaced it.          */
+decisions: [
+  { id:"DEC-01", date:"2026-09-09", st:"Accepted", owner:"Allen Cass",
+    t:"Build a transparent DTW comparison system before training any model",
+    ctx:"The project could start from learned action recognition or from deterministic geometric comparison.",
+    opts:["Train an action-recognition model first","Build a deterministic DTW baseline first"],
+    sel:"Deterministic DTW baseline first",
+    why:"Explainability is the product's first principle. A deterministic baseline can always justify a score; a model cannot, and there is no dataset to train one on.",
+    cons:"Scoring quality is bounded by hand-designed features until Phase 6. Accepted deliberately.",
+    comp:"comparison/dtw.py · scoring.py", src:"PRD §25 Final Recommendation", sup:null },
+  { id:"DEC-02", date:"2026-09-09", st:"Accepted", owner:"Allen Cass",
+    t:"Local-first — all data stays on the machine that recorded it",
+    ctx:"The system records video of people's hands, which the PRD classifies as sensitive biometric and behavioral data.",
+    opts:["Cloud storage and sync","Local-only with optional opt-in sync later"],
+    sel:"Local-only, no cloud path in the code",
+    why:"Privacy by construction is cheaper than privacy by policy, and consent for biometric upload is not something to retrofit.",
+    cons:"No multi-user collaboration, no cross-device history. Both are explicit MVP non-goals.",
+    comp:"server.py:449 — binds 127.0.0.1", src:"PRD §15", sup:null },
+  { id:"DEC-03", date:"2026-09-09", st:"Accepted", owner:"Allen Cass",
+    t:"Python 3.11+ with MediaPipe and OpenCV as the core stack",
+    ctx:"The pipeline spans camera capture, landmark extraction, numerical comparison, visualization and eventually machine learning.",
+    opts:["Python + MediaPipe + OpenCV","A C++ or Rust capture core with Python analysis"],
+    sel:"Python end to end",
+    why:"Shortest path from camera to landmarks to comparison to charts, with a clean route into PyTorch later.",
+    cons:"Per-frame performance ceiling. Measured latency of 12–22 ms leaves ample headroom, so the ceiling is not currently binding.",
+    comp:"pyproject.toml", src:"PRD §8", sup:null },
+  { id:"DEC-04", date:"2026-09-09", st:"Superseded", owner:"Allen Cass",
+    t:"Use PySide6 for the Phase 3 desktop coaching interface",
+    ctx:"Phase 3 needed a real interface beyond OpenCV preview windows.",
+    opts:["PySide6 desktop application","Web interface"],
+    sel:"PySide6",
+    why:"Specified in the PRD technical stack as the Phase 3 UI.",
+    cons:"Adds a large GUI dependency and ties the interface to the desktop.",
+    comp:"—", src:"PRD §8, §10 Phase 3", sup:"DEC-05" },
+  { id:"DEC-05", date:"2026-09-09", st:"Accepted", owner:"Allen Cass",
+    t:"Build the coaching interface as FastAPI plus a browser dashboard instead of PySide6",
+    ctx:"Supersedes DEC-04. The synchronized dual-video review deck, canvas skeleton overlay and scrubbing timeline are all things a browser does natively.",
+    opts:["PySide6 desktop app (DEC-04)","FastAPI + vanilla HTML/JS dashboard"],
+    sel:"FastAPI + browser dashboard",
+    why:"Video synchronization, canvas overlay and MediaRecorder capture come free in the browser, and an HTTP API is the separation PRD Phase 6 asks for anyway.",
+    cons:"Introduces a local web server and its security surface — already showing up as ISS-06. Also means the built artifact no longer matches the PRD text, which is why commit 2e344ff calls it \"Phase 4\" while PRD Phase 4 is something else entirely.",
+    comp:"server.py · web/", src:"commit 2e344ff", sup:null, supersedes:"DEC-04" },
+  { id:"DEC-06", date:"2026-09-09", st:"Accepted", owner:"Allen Cass",
+    t:"Drop SciPy; implement One Euro smoothing directly",
+    ctx:"The PRD lists SciPy for smoothing, interpolation and filtering.",
+    opts:["Add SciPy","Hand-roll the One Euro filter and bounded interpolation"],
+    sel:"Hand-rolled, no SciPy dependency",
+    why:"Two filters and a gap-interpolator are roughly 200 lines. A large binary dependency for that is not worth the install cost.",
+    cons:"Any future need for real signal processing means either writing more of it or adding SciPy after all.",
+    comp:"processing/smoothing.py", src:"pyproject.toml vs PRD §8", sup:null },
+  { id:"DEC-07", date:"2026-09-09", st:"Accepted", owner:"Allen Cass",
+    t:"Use the legacy MediaPipe solutions API rather than the Tasks API",
+    ctx:"MediaPipe offers both the older mp.solutions.hands interface and the newer Tasks HandLandmarker.",
+    opts:["mp.solutions.hands (legacy)","Tasks HandLandmarker with a .task model asset"],
+    sel:"mp.solutions.hands",
+    why:"Simpler integration and a pin to mediapipe <=0.10.21 that is known to work.",
+    cons:"The .task model asset ships but is never loaded (ISS-08), the mediapipe pin is now an upper bound that will eventually block upgrades, and stored model_version values name a file the code does not use.",
+    comp:"tracking/hand_tracker.py:61", src:"Source inspection", sup:null },
+  { id:"DEC-08", date:"2026-09-09", st:"Accepted", owner:"Allen Cass",
+    t:"Fold loose scripts into the package as importable modules",
+    ctx:"camera_test.py, record_session.py, replay_session.py, compare_sessions.py and plot_features.py lived in scripts/ outside the package.",
+    opts:["Keep scripts/ as the operator entry point","Move the logic into the package and drive it from the CLI"],
+    sel:"Move into the package",
+    why:"Script-only logic cannot be imported, tested or reused by the server. compare_sessions.py became comparison/pipeline.py, which the API now calls directly.",
+    cons:"The repository layout no longer matches the structure proposed in PRD §16.",
+    comp:"comparison/pipeline.py · reporting/plots.py", src:"commit 8f621c8", sup:null },
+  { id:"DEC-09", date:"2026-09-09", st:"Proposed", owner:"Allen Cass",
+    t:"Insert a Phase 4 — MVP Hardening & Validation that does not exist in the PRD",
+    ctx:"Phases 0–3 are built, but five conditions in the PRD's own MVP Definition of Done are measurably unmet. The remaining work has no phase to live in, and moving straight to PRD Phase 4 would build object tracking on top of scores nobody has validated.",
+    opts:["Continue to PRD Phase 4 (tools and object context)","Insert a hardening phase and hold the MVP gate until validation passes","Reclassify the gaps as accepted MVP limitations"],
+    sel:"Insert the hardening phase",
+    why:"The seeded-error experiment in PRD §22 has never been run. Until it does, no downstream phase can tell whether it improved anything.",
+    cons:"Renumbers the PRD's phases in this dashboard: PRD Phase 4 becomes P5 here, Phase 5 becomes P6, Phase 6 becomes P7. Each phase carries its original PRD label.",
+    comp:"—", src:"This dashboard — needs your confirmation", sup:null, assumed:true }
+],
+
+/* ---------------------------------------------------------- ACTIVITY LOG -- */
+/* Append new entries at the top. Never overwrite an entry — a correction is a
+   new entry that states what changed and why.                                 */
+activity: [
+  { ts:"2026-09-09 · dashboard created", src:"Repository analysis — PRD, source tree, test run, runtime database",
+    sum:"Command center established as the authoritative project snapshot. Seeded entirely from repository evidence.",
+    added:"8 phases, 8 milestones, 58 work items, 18 requirements, 23 test records, 10 risks, 8 issues, 9 decisions",
+    changed:"Phase numbering diverges from the PRD by one from P5 onward, because a hardening phase was inserted (DEC-09)",
+    done:"32 work items recorded Complete, each with a file, commit or database row behind it",
+    blockers:"ISS-01 smoothness 0.0 · ISS-02 single-take references · ISS-05 capture coverage",
+    dec:"DEC-09 proposed and awaiting confirmation",
+    prog:"Baseline established" },
+  { ts:"2026-09-09 12:47", src:"commit c793b91", sum:"Added graphify-out to .gitignore.",
+    added:"", changed:".gitignore", done:"", blockers:"", dec:"", prog:"No change" },
+  { ts:"2026-09-09 13:26", src:"commit 8f621c8", sum:"Refactored project structure — loose scripts folded into the package, comparison logic consolidated into pipeline.py.",
+    added:"comparison/pipeline.py, reporting/plots.py", changed:"app.py, cli.py, camera.py, database.py, quality.py, server.py and 12 more",
+    done:"CMP-07 consolidation", blockers:"", dec:"DEC-08", prog:"Structural only" },
+  { ts:"2026-09-09 12:35", src:"commit aff8a96", sum:"Synced expert skeleton playback with reference data; refactored frame interpolation.",
+    added:"", changed:"web/app.js expert playback path", done:"UI-03", blockers:"", dec:"", prog:"Phase 3" },
+  { ts:"2026-09-09 12:22", src:"commit 0053c85", sum:"Browser-based video recording and upload with cross-platform ffmpeg transcoding.",
+    added:"/api/record_upload, MediaRecorder capture in the browser", changed:"server.py, web/app.js",
+    done:"UI-05", blockers:"", dec:"", prog:"Phase 3" },
+  { ts:"2026-09-09 11:54", src:"commit 2e344ff", sum:"Interactive web dashboard, synchronized video deck, ghost skeleton canvas and REST API.",
+    added:"server.py, web/index.html, web/app.js, web/style.css", changed:"cli.py serve command",
+    done:"UI-01, UI-02, UI-04, UI-06, UI-07", blockers:"", dec:"DEC-05 supersedes DEC-04", prog:"Phase 3",
+    note:"The commit message calls this \"Phase 4\". It corresponds to PRD Phase 3, not PRD Phase 4." },
+  { ts:"2026-09-09 09:31", src:"commit 378ea67", sum:"DTW alignment, tolerance envelopes, component scoring and the feedback generator.",
+    added:"comparison/dtw.py, reference.py, scoring.py, feedback.py", changed:"",
+    done:"CMP-01 through CMP-06 — Sprint 3", blockers:"", dec:"", prog:"Phase 2" },
+  { ts:"2026-09-09 09:20", src:"commit 0b7bc22", sum:"Sprint 2 complete — motion representation, normalization and feature extraction.",
+    added:"processing/smoothing.py, normalization.py, features.py", changed:"storage/models.py",
+    done:"REP-01 through REP-06 — Sprint 2", blockers:"", dec:"DEC-06", prog:"Phase 2" },
+  { ts:"2026-09-09 09:14", src:"commit 17831ee", sum:"Capture quality assessment engine and reporting tools.",
+    added:"reporting/quality.py", changed:"capture pipeline", done:"CAP-05", blockers:"", dec:"", prog:"Phase 0" }
+],
+
+/* ------------------------------------------------------- UPDATE PROTOCOL -- */
+updateProtocol: {
+  intro:"This dashboard is the authoritative project snapshot. Tell Claude what changed in plain language; it interprets the update against the current data, shows you a change summary before applying it, recalculates progress, appends an activity entry, and returns the updated file.",
+  steps:[
+    "Interpret the update against the current PROJECT data.",
+    "Identify every affected work item, milestone, requirement, test, risk, issue or decision.",
+    "Show a concise proposed change summary before editing anything.",
+    "Flag contradictions, ambiguous status changes, and claims with no evidence behind them.",
+    "Apply confirmed changes to the PROJECT object only.",
+    "Recalculate phase and overall progress.",
+    "Update project health and milestone confidence.",
+    "Append an entry to the activity log — never overwrite one.",
+    "Preserve completed work, prior decisions and historical records. A replaced decision is marked Superseded and linked, not deleted.",
+    "Return the updated dashboard."
+  ],
+  rules:[
+    "Nothing becomes Complete or Passed without a file path, commit SHA, test file or database row.",
+    "An ambiguous update marks the item Needs confirmation rather than guessing.",
+    "A Blocked item keeps its last confirmed progress figure — it does not reset to zero.",
+    "Anything inferred rather than observed carries an ASSUMED tag in the interface."
+  ],
+  examples:[
+    "Smoothness is fixed — the jerk features were being computed on unnormalized coordinates. HRD-01 done, regression test added in tests/test_scoring.py.",
+    "Recorded 6 expert takes of reach_and_pinch this morning, all above 95% coverage. Rebuilt the reference from all six.",
+    "Ran the seeded-error experiment. Speed variants held up, wrist rotation ranked correctly, but the omitted final pose was not caught.",
+    "We decided to adopt the MediaPipe Tasks API after all — supersede DEC-07.",
+    "Capture is still failing coverage even after the lighting fix. Treat HRD-05 as blocked and tell me what that does to the MVP date."
+  ]
+}
+
+}; /* ==================== DATA END — render code follows ==================== */
+
+/* ---------------------------------------------------------------- helpers */
+/* RENDER CONTRACT
+   Views are built as HTML strings and inserted through paint() below, which is
+   the only DOM sink in this file. Every value that comes from PROJECT passes
+   through esc() at its interpolation site, so markup can only originate from
+   this file's own literals. Imported JSON is additionally validated by
+   sanitizeImport() before it is ever allowed to reach a view. */
+const $ = s => document.querySelector(s);
+const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c =>
+  ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const j = (a, sep = "") => (a || []).join(sep);
+const pct = n => Math.round(n) + "%";
+
+function paint(el, html) {
+  el.textContent = "";
+  const tpl = document.createElement("template");
+  tpl.textContent = "";            // template content is inert until adopted
+  tpl.insertAdjacentHTML("afterbegin", html);
+  el.append(...tpl.childNodes);
+}
+
+/* Reject anything that is not plain JSON data. Blocks functions, prototype
+   pollution via __proto__/constructor keys, and absurd nesting depth. */
+function sanitizeImport(value, depth = 0) {
+  if (depth > 12) throw new Error("Imported data is nested too deeply.");
+  if (value === null) return null;
+  const t = typeof value;
+  if (t === "string" || t === "number" || t === "boolean") return value;
+  if (Array.isArray(value)) return value.map(v => sanitizeImport(v, depth + 1));
+  if (t === "object") {
+    const out = {};
+    for (const k of Object.keys(value)) {
+      if (k === "__proto__" || k === "constructor" || k === "prototype") continue;
+      out[k] = sanitizeImport(value[k], depth + 1);
+    }
+    return out;
+  }
+  throw new Error("Imported data contains a value that is not plain JSON: " + t);
+}
+
+/* Status vocabulary. Every entry pairs a colour with a glyph and a word, so
+   status never depends on colour alone. */
+const STATUS = {
+  "Backlog":         { hue:"gray",   g:"○" },
+  "Ready":           { hue:"blue",   g:"◔" },
+  "In Progress":     { hue:"purple", g:"◑" },
+  "Blocked":         { hue:"red",    g:"■" },
+  "Testing":         { hue:"amber",  g:"◕" },
+  "Complete":        { hue:"green",  g:"●" },
+  "Not Started":     { hue:"gray",   g:"○" },
+  "Planned":         { hue:"blue",   g:"◔" },
+  "At Risk":         { hue:"amber",  g:"▲" },
+  "On Track":        { hue:"green",  g:"●" },
+  "Passed":          { hue:"green",  g:"✓" },
+  "Failed":          { hue:"red",    g:"✕" },
+  "Not Run":         { hue:"gray",   g:"○" },
+  "Partial":         { hue:"amber",  g:"◐" },
+  "Implemented":     { hue:"green",  g:"●" },
+  "Not Implemented": { hue:"gray",   g:"○" },
+  "Needs confirmation":{ hue:"amber", g:"?" },
+  "Integrated":      { hue:"green",  g:"●" },
+  "Integrated (optional)":{ hue:"green", g:"●" },
+  "Not Integrated":  { hue:"gray",   g:"○" },
+  "Open":            { hue:"amber",  g:"▲" },
+  "Mitigated":       { hue:"green",  g:"●" },
+  "Realized":        { hue:"red",    g:"■" },
+  "Accepted":        { hue:"green",  g:"●" },
+  "Proposed":        { hue:"blue",   g:"◔" },
+  "Superseded":      { hue:"gray",   g:"⊘" },
+  "Rejected":        { hue:"red",    g:"✕" },
+  "Confirmed":       { hue:"green",  g:"●" },
+  "Low":             { hue:"amber",  g:"▲" },
+  "Not assessable":  { hue:"gray",   g:"○" }
+};
+const PRI = { Critical:"red", High:"amber", Medium:"blue", Low:"gray" };
+const SEV = PRI;
+
+function badge(label, hueOverride) {
+  const s = STATUS[label] || { hue: hueOverride || "gray", g:"·" };
+  const hue = hueOverride || s.hue;
+  return `<span class="badge ${hue}"><span class="g" aria-hidden="true">${s.g}</span>${esc(label)}</span>`;
+}
+const assumedTag = on => on ? `<span class="badge assumed">ASSUMED</span>` : "";
+const bar = (p, hue) => `<span class="bar ${hue || ""}"><i style="width:${Math.max(0, Math.min(100, p))}%"></i></span>`;
+
+/* ------------------------------------------------------------- progress -- */
+/* Weights are the ones the brief specifies. No effort weighting is applied:
+   the PRD estimates effort per milestone, never per task, so an unweighted
+   mean is the honest calculation. The overview shows this working. */
+const WEIGHT = { "Backlog":0, "Ready":5, "In Progress":50, "Testing":85, "Complete":100 };
+function itemProgress(w) {
+  if (w.st === "Blocked") return typeof w.last === "number" ? w.last : 0; // keep last confirmed
+  return WEIGHT[w.st] ?? 0;
+}
+const phaseItems = pid => PROJECT.workItems.filter(w => w.p === pid);
+function phaseProgress(pid) {
+  const items = phaseItems(pid);
+  if (!items.length) return 0;
+  return items.reduce((a, w) => a + itemProgress(w), 0) / items.length;
+}
+const overallProgress = () =>
+  PROJECT.workItems.reduce((a, w) => a + itemProgress(w), 0) / PROJECT.workItems.length;
+function statusCounts() {
+  const c = { Backlog:0, Ready:0, "In Progress":0, Blocked:0, Testing:0, Complete:0 };
+  PROJECT.workItems.forEach(w => c[w.st] = (c[w.st] || 0) + 1);
+  return c;
+}
+
+/* ------------------------------------------------------------------ nav -- */
+const VIEWS = [
+  { id:"overview",     n:"Executive overview",  grp:"Status" },
+  { id:"roadmap",      n:"Phase roadmap",       grp:"Status" },
+  { id:"timeline",     n:"Milestone timeline",  grp:"Status" },
+  { id:"work",         n:"Work tracker",        grp:"Delivery" },
+  { id:"architecture", n:"System architecture", grp:"System" },
+  { id:"hardware",     n:"Hardware matrix",     grp:"System" },
+  { id:"requirements", n:"Requirements",        grp:"System" },
+  { id:"testing",      n:"Testing & validation",grp:"System" },
+  { id:"risks",        n:"Risks & issues",      grp:"Governance" },
+  { id:"decisions",    n:"Decision log",        grp:"Governance" },
+  { id:"activity",     n:"Activity history",    grp:"Governance" },
+  { id:"stakeholder",  n:"Stakeholder view",    grp:"Share" },
+  { id:"data",         n:"Export & import",     grp:"Share" },
+  { id:"protocol",     n:"How to update this",  grp:"Share" }
+];
+
+function renderNav(active) {
+  let html = "", lastGrp = null;
+  VIEWS.forEach((v, i) => {
+    if (v.grp !== lastGrp) { html += `<div class="nav-group">${esc(v.grp)}</div>`; lastGrp = v.grp; }
+    html += `<a href="#${esc(v.id)}"${v.id === active ? ' aria-current="page"' : ""}>`
+         +  `<span class="idx">${i + 1}</span><span>${esc(v.n)}</span></a>`;
+  });
+  paint($("#nav"), html);
+}
+
+/* =================================================== VIEW 1 — OVERVIEW === */
+function viewOverview() {
+  const m = PROJECT.meta, op = overallProgress(), c = statusCounts();
+  const nextMs = PROJECT.milestones.find(x => x.id === m.nextMilestone.split(" ")[0])
+              || PROJECT.milestones.find(x => !x.actual);
+  const topRisks = ["ISS-02", "ISS-01", "ISS-05"]
+    .map(id => PROJECT.issues.find(i => i.id === id)).filter(Boolean);
+  const hueOf = h => STATUS[h] ? STATUS[h].hue : "gray";
+
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Executive overview · last updated ${esc(m.lastUpdated)}</span>
+    <h1>${esc(m.name)}</h1>
+    <p class="mission">${esc(m.mission)}</p>
+  </div>
+
+  <div class="hero">
+    <div class="section">
+      <div class="healthbox">
+        <div class="hl">
+          <span class="dotstrip" style="background:var(--s-${hueOf(m.health)})"></span>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <span class="eyebrow">Project health</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <strong style="font-size:1.15rem;font-family:'IBM Plex Sans Condensed',sans-serif">${esc(m.health)}</strong>
+              ${badge(m.currentPhase, "purple")}
+            </div>
+          </div>
+        </div>
+        <p class="small dim">${esc(m.healthWhy)}</p>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Most important current objective</span>
+        <p style="margin-top:6px">${esc(m.objective)}</p>
+      </div>
+    </div>
+    <div class="section">
+      <div class="card">
+        <span class="eyebrow">Next milestone</span>
+        <h3 style="margin-top:6px">${esc(nextMs ? nextMs.name : "—")}</h3>
+        <dl class="kv" style="margin-top:10px">
+          <dt>Target</dt><dd class="num">${esc(nextMs && nextMs.target ? nextMs.target : "Not scheduled")} ${assumedTag(nextMs && nextMs.targetAssumed)}</dd>
+          <dt>Status</dt><dd>${badge(nextMs ? nextMs.status : "Not Started")}</dd>
+          <dt>Confidence</dt><dd>${badge(nextMs ? nextMs.confidence : "Not assessable")}</dd>
+        </dl>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Scope of record</span>
+        <ul class="tight small dim" style="margin-top:8px">${j(m.sources.map(s => `<li>${esc(s)}</li>`))}</ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><span class="lab">Overall progress</span><span class="val">${pct(op)}</span>
+      <span class="note">${c.Complete} of ${PROJECT.workItems.length} work items complete</span></div>
+    <div class="metric"><span class="lab">Phases built</span><span class="val">4<span style="font-size:.9rem;color:var(--ink-3)"> / 8</span></span>
+      <span class="note">P0–P3 delivered; P0 exit criteria unmet</span></div>
+    <div class="metric"><span class="lab">Automated tests</span><span class="val">48<span style="font-size:.9rem;color:var(--ink-3)"> / 48</span></span>
+      <span class="note">All passing · 15 files · 3.05s</span></div>
+    <div class="metric"><span class="lab">Open issues</span><span class="val">${PROJECT.issues.filter(i => i.st === "Open").length}</span>
+      <span class="note">${PROJECT.issues.filter(i => i.sev === "Critical").length} critical</span></div>
+    <div class="metric"><span class="lab">Blocked items</span><span class="val">${c.Blocked}</span>
+      <span class="note">Both blocked behind ISS-02</span></div>
+  </div>
+
+  <details class="calc">
+    <summary>How ${pct(op)} was calculated</summary>
+    <div class="small dim" style="display:flex;flex-direction:column;gap:9px">
+      <p>Unweighted mean across all ${PROJECT.workItems.length} work items. The PRD estimates effort per milestone, never per task, so there are no task weights to apply — the calculation is stated rather than invented.</p>
+      <div class="scroll-x">
+        <table style="min-width:520px">
+          <thead><tr><th>Status</th><th>Weight</th><th>Items</th><th>Points added</th></tr></thead>
+          <tbody>
+            ${j(["Complete","Testing","In Progress","Ready","Backlog"].map(s =>
+              `<tr><td>${badge(s)}</td><td class="num">${WEIGHT[s]}%</td><td class="num">${c[s]}</td><td class="num">${(c[s] * WEIGHT[s] / PROJECT.workItems.length).toFixed(1)}</td></tr>`))}
+            <tr><td>${badge("Blocked")}</td><td class="num">last confirmed</td><td class="num">${c.Blocked}</td>
+                <td class="num">${(PROJECT.workItems.filter(w => w.st === "Blocked").reduce((a, w) => a + itemProgress(w), 0) / PROJECT.workItems.length).toFixed(1)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>A blocked item keeps whatever progress it had when it was blocked, so blocking never erases work already done.</p>
+    </div>
+  </details>
+
+  <div class="two">
+    <div class="card section">
+      <div class="sec-title"><h2>Top blockers and risks</h2><span class="count">3 of ${PROJECT.issues.length} open issues</span></div>
+      <ul class="none risklist">
+        ${j(topRisks.map(i => `<li>
+          <span class="sev">${badge(i.sev, SEV[i.sev])}</span>
+          <span><strong class="mono tiny">${esc(i.id)}</strong> ${esc(i.d)}
+          <br><span class="small dim">${esc(i.why)}</span>
+          <br><span class="evi">${esc(i.evi)}</span></span></li>`))}
+      </ul>
+    </div>
+    <div class="card section">
+      <div class="sec-title"><h2>Immediate next actions</h2></div>
+      <ol class="tight">${j(m.nextActions.map(a => `<li>${esc(a)}</li>`))}</ol>
+    </div>
+  </div>
+
+  <div class="card section">
+    <div class="sec-title"><h2>Recent accomplishments</h2><span class="count">each backed by a commit, file or database row</span></div>
+    <ul class="none acclist">
+      ${j(m.recentWins.map(w => `<li><span class="sev">${badge("Complete")}</span>
+        <span>${esc(w.text)}<br><span class="evi">${esc(w.evi)}</span></span></li>`))}
+    </ul>
+  </div>`;
+}
+
+/* ==================================================== VIEW 2 — ROADMAP === */
+function critLine(x) {
+  const state = x.met === true ? "Passed" : x.met === false ? "Failed" : "Not Run";
+  return `<li>${badge(state)} ${esc(x.t)}<br><span class="evi">${esc(x.evi)}</span></li>`;
+}
+function viewRoadmap() {
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Phase roadmap</span>
+    <h1>Eight phases, four built</h1>
+    <p>Adapted from PRD §10 and checked against what was actually built. P4 is an insertion rather than PRD text — see DEC-09. From P5 onward each phase keeps its original PRD label so the two documents can still be read side by side.</p>
+  </div>
+  ${j(PROJECT.phases.map(p => {
+    const prog = phaseProgress(p.id), items = phaseItems(p.id);
+    const hue = STATUS[p.status] ? STATUS[p.status].hue : "gray";
+    return `<details class="phase"${(p.status === "In Progress" || p.status === "At Risk") ? " open" : ""}>
+      <summary>
+        <span class="pnum">${esc(p.num)}</span>
+        <span class="psum-main">
+          <span class="t">${esc(p.name)} ${p.prd ? `<span class="chip">${esc(p.prd)}</span>` : ""} ${assumedTag(p.assumed)}</span>
+          <span class="small dim">${esc(p.purpose)}</span>
+        </span>
+        <span class="psum-right">${badge(p.status)}${bar(prog, hue)}<span class="pct">${pct(prog)}</span></span>
+      </summary>
+      <div class="pbody">
+        <div class="section">
+          <span class="eyebrow">Schedule</span>
+          <dl class="kv">
+            <dt>Start</dt><dd class="num">${esc(p.start || "Not scheduled")}</dd>
+            <dt>Target end</dt><dd class="num">${esc(p.end || "Not scheduled")} ${assumedTag(p.endAssumed)}</dd>
+            <dt>Work items</dt><dd class="num">${items.length}</dd>
+            <dt>Depends on</dt><dd>${p.deps.length ? j(p.deps.map(d => `<span class="chip">${esc((PROJECT.phases.find(x => x.id === d) || {}).num || d)}</span>`), " ") : "—"}</dd>
+          </dl>
+        </div>
+        <div class="section">
+          <span class="eyebrow">Entry criteria</span>
+          <ul class="tight small">${j(p.entry.map(e => `<li>${esc(e)}</li>`))}</ul>
+        </div>
+        <div class="section">
+          <span class="eyebrow">Major deliverables</span>
+          <div class="chipline">${j(p.deliverables.map(d => `<span class="chip">${esc(d)}</span>`))}</div>
+        </div>
+        <div class="section full">
+          <span class="eyebrow">Exit criteria — PRD wording, checked against evidence</span>
+          <ul class="none crit">${j(p.exit.map(critLine))}</ul>
+        </div>
+        ${p.blockers.length ? `<div class="section full"><span class="eyebrow">Blocking issues</span>
+          <ul class="tight small">${j(p.blockers.map(b => `<li>${esc(b)}</li>`))}</ul></div>` : ""}
+        ${p.note ? `<div class="full note-band">${esc(p.note)}</div>` : ""}
+      </div>
+    </details>`;
+  }))}`;
+}
+
+/* =================================================== VIEW 3 — TIMELINE === */
+function viewTimeline() {
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Milestone timeline</span>
+    <h1>M0 through M6</h1>
+    <p>The PRD contains no dates at all, only effort estimates. Completed milestones carry their real git dates. Future targets are projected forward from those estimates and tagged ASSUMED. Where the PRD declines to estimate, the entry reads Not scheduled rather than inventing a date.</p>
+  </div>
+  <div class="tl">
+    ${j(PROJECT.milestones.map(ms => {
+      const cls = ms.status === "Complete" ? "done" : ms.status === "At Risk" ? "risk"
+                : ms.status === "Blocked" ? "blocked" : "future";
+      const ph = PROJECT.phases.find(p => p.id === ms.phase);
+      return `<div class="tlitem ${cls}">
+        <div class="card">
+          <div class="tlhead">
+            <span class="mid">${esc(ms.id)}</span>
+            <h3 style="flex:1;min-width:200px">${esc(ms.name)}</h3>
+            ${badge(ms.status)}
+          </div>
+          <div class="chipline">
+            ${ph ? `<span class="chip">${esc(ph.num)} · ${esc(ph.name)}</span>` : ""}
+            <span class="chip">Effort: ${esc(ms.effort)}</span>
+            ${ms.deps.length ? `<span class="chip">After ${esc(j(ms.deps, ", "))}</span>` : ""}
+          </div>
+          <div class="tldates">
+            <span>Target <b>${esc(ms.target || "Not scheduled")}</b> ${assumedTag(ms.targetAssumed)}</span>
+            <span>Actual <b>${esc(ms.actual || "—")}</b></span>
+            <span>Confidence <b>${esc(ms.confidence)}</b></span>
+            <span>Variance <b>${esc(ms.variance)}</b></span>
+          </div>
+          ${ms.note ? `<p class="small dim" style="margin-top:9px">${esc(ms.note)}</p>` : ""}
+        </div>
+      </div>`;
+    }))}
+  </div>`;
+}
+
+/* ======================================================= VIEW 4 — WORK === */
+const COLUMNS = ["Backlog", "Ready", "In Progress", "Blocked", "Testing", "Complete"];
+const filters = { phase:"", stream:"", pri:"", st:"", owner:"", q:"" };
+
+const streamName = id => (PROJECT.workstreams.find(s => s.id === id) || {}).name || id;
+const phaseNum   = id => (PROJECT.phases.find(p => p.id === id) || {}).num || id;
+
+function matchesFilters(w) {
+  const q = filters.q.trim().toLowerCase();
+  if (filters.phase  && w.p   !== filters.phase)  return false;
+  if (filters.stream && w.s   !== filters.stream) return false;
+  if (filters.pri    && w.pri !== filters.pri)    return false;
+  if (filters.st     && w.st  !== filters.st)     return false;
+  if (filters.owner  && (w.owner || "Allen Cass") !== filters.owner) return false;
+  if (q && !(w.id + " " + w.t + " " + w.d + " " + (w.n || "") + " " + j(w.evi || [], " "))
+            .toLowerCase().includes(q)) return false;
+  return true;
+}
+
+function viewWork() {
+  const visible = PROJECT.workItems.filter(matchesFilters);
+  const opt = (val, label, sel) => `<option value="${esc(val)}"${sel === val ? " selected" : ""}>${esc(label)}</option>`;
+
+  const board = COLUMNS.map(col => {
+    const items = visible.filter(w => w.st === col);
+    const hue = STATUS[col].hue;
+    return `<div class="col">
+      <div class="colhead"><span class="nm">${esc(col)}</span><span class="ct">${items.length}</span></div>
+      <div class="colrule" style="background:var(--s-${hue})"></div>
+      ${items.length ? j(items.map(w => `
+        <button class="wi" type="button" data-item="${esc(w.id)}" data-pri="${esc(w.pri)}">
+          <span class="id">${esc(w.id)} · ${esc(phaseNum(w.p))}</span>
+          <span class="ti">${esc(w.t)}</span>
+          <span class="meta">${badge(w.pri, PRI[w.pri])}<span class="chip">${esc(streamName(w.s))}</span></span>
+          ${bar(itemProgress(w), hue)}
+        </button>`))
+        : `<p class="empty">Nothing here under the current filters.</p>`}
+    </div>`;
+  });
+
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Work tracker</span>
+    <h1>${PROJECT.workItems.length} work items</h1>
+    <p>Seeded from the PRD §22 sprint backlogs, the phases the repository shows as built, and the gaps found in the runtime database. Select a card for its full record: acceptance criteria, dependencies, evidence and notes.</p>
+  </div>
+
+  <div class="toolbar">
+    <label>Phase<select id="fPhase">${opt("", "All phases", filters.phase)}${j(PROJECT.phases.map(p => opt(p.id, p.num + " · " + p.name, filters.phase)))}</select></label>
+    <label>Workstream<select id="fStream">${opt("", "All workstreams", filters.stream)}${j(PROJECT.workstreams.map(s => opt(s.id, s.name, filters.stream)))}</select></label>
+    <label>Priority<select id="fPri">${opt("", "All priorities", filters.pri)}${j(["Critical","High","Medium","Low"].map(p => opt(p, p, filters.pri)))}</select></label>
+    <label>Status<select id="fSt">${opt("", "All statuses", filters.st)}${j(COLUMNS.map(c => opt(c, c, filters.st)))}</select></label>
+    <label>Owner<select id="fOwner">${opt("", "All owners", filters.owner)}${opt("Allen Cass", "Allen Cass", filters.owner)}</select></label>
+    <label>Search<input type="search" id="fQ" placeholder="id, title, evidence…" value="${esc(filters.q)}"></label>
+    <span class="spacer"></span>
+    <span class="tiny muted num">${visible.length} of ${PROJECT.workItems.length} shown</span>
+    <button class="btn" type="button" id="fClear">Clear filters</button>
+  </div>
+
+  <div class="board">${j(board)}</div>`;
+}
+
+function openItem(id) {
+  const w = PROJECT.workItems.find(x => x.id === id);
+  if (!w) return;
+  const dep = d => {
+    const t = PROJECT.workItems.find(x => x.id === d);
+    return `<span class="chip">${esc(d)}${t ? " · " + esc(t.st) : ""}</span>`;
+  };
+  paint($("#drawerPanel"), `
+    <button class="btn drawer-close" type="button" id="drawerClose">Close</button>
+    <div>
+      <span class="eyebrow">${esc(w.id)} · ${esc(phaseNum(w.p))} · ${esc(streamName(w.s))}</span>
+      <h2 style="margin-top:6px">${esc(w.t)}</h2>
+    </div>
+    <div class="chipline">${badge(w.st)}${badge(w.pri, PRI[w.pri])}<span class="chip">${pct(itemProgress(w))} progress</span></div>
+    <p class="small">${esc(w.d)}</p>
+    <dl class="kv">
+      <dt>Owner</dt><dd>${esc(w.owner || "Allen Cass")}</dd>
+      <dt>Phase</dt><dd>${esc(phaseNum(w.p))} · ${esc((PROJECT.phases.find(p => p.id === w.p) || {}).name || "—")}</dd>
+      <dt>Workstream</dt><dd>${esc(streamName(w.s))}</dd>
+      <dt>Target</dt><dd class="num">${esc(w.target || "Not scheduled")}</dd>
+      <dt>Last updated</dt><dd class="num">${esc(w.upd)}</dd>
+      <dt>Depends on</dt><dd>${w.deps.length ? j(w.deps.map(dep), " ") : "Nothing"}</dd>
+    </dl>
+    <div class="section">
+      <span class="eyebrow">Acceptance criteria</span>
+      <ul class="tight small">${j((w.ac || []).map(a => `<li>${esc(a)}</li>`))}</ul>
+    </div>
+    ${(w.evi || []).length ? `<div class="section">
+      <span class="eyebrow">Evidence</span>
+      <ul class="tight"><li class="evi">${j(w.evi.map(esc), '</li><li class="evi">')}</li></ul>
+    </div>` : ""}
+    ${w.n ? `<div class="note-band">${esc(w.n)}</div>` : ""}
+  `);
+  $("#drawer").classList.add("on");
+  $("#drawerClose").focus();
+}
+
+/* =============================================== VIEW 5 — ARCHITECTURE === */
+const ARCH_STATE = {
+  impl:     { fill:"var(--surface)",  stroke:"var(--accent)",       dash:"",     label:"Implemented" },
+  planned:  { fill:"var(--surface-2)",stroke:"var(--line-strong)",  dash:"5 4",  label:"Planned" },
+  external: { fill:"var(--surface-2)",stroke:"var(--s-gray)",       dash:"2 3",  label:"External dependency" },
+  unused:   { fill:"var(--s-amber-bg)",stroke:"var(--s-amber)",     dash:"5 4",  label:"Present but unused" }
+};
+
+function archSvg() {
+  const L = PROJECT.architecture.layers;
+  const W = 1060, bandH = 76, gapY = 20, x0 = 168, x1 = 1040, avail = x1 - x0;
+  const H = L.length * (bandH + gapY) + gapY;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MotionMentor layered architecture, ${L.length} layers">`;
+
+  L.forEach((layer, li) => {
+    const y = gapY + li * (bandH + gapY);
+    s += `<rect x="8" y="${y}" width="${W - 16}" height="${bandH}" rx="8" fill="var(--surface-2)" stroke="var(--line)"/>`;
+    s += `<text x="150" y="${y + bandH / 2 + 4}" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="11" letter-spacing="1.2" fill="var(--ink-3)">${esc(layer.name.toUpperCase())}</text>`;
+
+    const n = layer.nodes.length, gap = 18;
+    const w = (avail - gap * (n - 1)) / n;
+    layer.nodes.forEach((node, ni) => {
+      const st = ARCH_STATE[node.s] || ARCH_STATE.impl;
+      const x = x0 + ni * (w + gap), ny = y + 13, nh = bandH - 26;
+      s += `<rect x="${x}" y="${ny}" width="${w}" height="${nh}" rx="6" fill="${st.fill}" stroke="${st.stroke}" stroke-width="1.5"${st.dash ? ` stroke-dasharray="${st.dash}"` : ""}/>`;
+      s += `<text x="${x + 11}" y="${ny + 20}" font-family="IBM Plex Sans, sans-serif" font-size="12.5" font-weight="600" fill="var(--ink)">${esc(node.t)}</text>`;
+      s += `<text x="${x + 11}" y="${ny + 37}" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">${esc(node.f)}</text>`;
+    });
+
+    if (li < L.length - 1) {
+      const ay = y + bandH + 3, cx = W / 2;
+      s += `<path d="M ${cx - 7} ${ay} L ${cx} ${ay + 9} L ${cx + 7} ${ay}" fill="none" stroke="var(--line-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }
+  });
+  return s + `</svg>`;
+}
+
+function viewArchitecture() {
+  return `
+  <div class="view-head">
+    <span class="eyebrow">System architecture</span>
+    <h1>Capture to score, in eight layers</h1>
+    <p>${esc(PROJECT.architecture.note)}</p>
+  </div>
+  <div class="legend">
+    ${j(Object.values(ARCH_STATE).map(s =>
+      `<span><i style="background:${s.fill};border:1.5px ${s.dash ? "dashed" : "solid"} ${s.stroke}"></i>${esc(s.label)}</span>`))}
+  </div>
+  <div class="archwrap">${archSvg()}</div>
+  <div class="note-band warn">Two things this diagram is telling you. The MediaPipe model asset sits in the tree, is named in the config, and is never loaded — the tracker uses the legacy solutions API instead (ISS-08). And nothing above the API layer is planned except future clients: every box in the processing and comparison layers already exists and is unit-tested. The project's risk is not missing code, it is unvalidated behaviour in the code that exists.</div>`;
+}
+
+/* =================================================== VIEW 6 — HARDWARE === */
+function viewHardware() {
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Hardware and software integration</span>
+    <h1>Five integration points</h1>
+    <p>A standard USB camera is the only physical device in scope. PRD §4.2 names mobile, XR and RealWear deployment as explicit MVP non-goals, so no headset appears here. Depth and multi-camera input are Phase 7 possibilities, not commitments.</p>
+  </div>
+  <div class="scroll-x">
+    <table>
+      <thead><tr>
+        <th>Component</th><th>Firmware / OS</th><th>Software module</th><th>Interface</th>
+        <th>Data exchanged</th><th>Integration</th><th>Test</th><th>Known limitations</th><th>Owner</th>
+      </tr></thead>
+      <tbody>
+        ${j(PROJECT.hardware.map(h => {
+          const cls = h.test === "Failed" ? "flagged" : (h.test === "Not Run" || h.st === "Not Integrated") ? "warned" : "";
+          return `<tr class="${cls}">
+            <td><strong>${esc(h.comp)}</strong></td>
+            <td class="tiny">${esc(h.fw)}</td>
+            <td class="evi">${esc(h.mod)}</td>
+            <td class="tiny">${esc(h.iface)}</td>
+            <td class="tiny">${esc(h.data)}</td>
+            <td>${badge(h.st)}</td>
+            <td>${badge(h.test)}</td>
+            <td class="tiny dim">${esc(h.lim)}</td>
+            <td class="tiny">${esc(h.owner)}</td>
+          </tr>`;
+        }))}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+/* =============================================== VIEW 7 — REQUIREMENTS === */
+function viewRequirements() {
+  const gaps = PROJECT.requirements.filter(r => r.impl !== "Implemented").length;
+  const untested = PROJECT.requirements.filter(r => !r.test).length;
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Requirements and traceability</span>
+    <h1>${PROJECT.requirements.length} requirements, traced to code</h1>
+    <p>Each row runs requirement → design component → work item → test → evidence. ${gaps} are not fully implemented and ${untested} have no test behind them at all; both are marked in the left edge of the row.</p>
+  </div>
+  <div class="scroll-x">
+    <table>
+      <thead><tr>
+        <th>ID</th><th>Requirement</th><th>Type</th><th>Pri</th><th>Source</th>
+        <th>Component</th><th>Work items</th><th>Status</th><th>Validation</th><th>Test</th><th>Evidence</th>
+      </tr></thead>
+      <tbody>
+        ${j(PROJECT.requirements.map(r => {
+          const cls = (r.impl === "Not Implemented") ? "flagged"
+                    : (r.impl === "Partial" || r.impl === "Needs confirmation" || !r.test) ? "warned" : "";
+          return `<tr class="${cls}">
+            <td class="mono tiny"><strong>${esc(r.id)}</strong></td>
+            <td>${esc(r.d)}</td>
+            <td class="tiny">${esc(r.type)}</td>
+            <td>${badge(r.pri, PRI[r.pri])}</td>
+            <td class="tiny dim">${esc(r.src)}</td>
+            <td class="evi">${esc(r.comp)}</td>
+            <td class="tiny">${j(r.items.map(i => `<span class="chip">${esc(i)}</span>`), " ")}</td>
+            <td>${badge(r.impl)}</td>
+            <td class="tiny">${esc(r.val)}</td>
+            <td class="evi">${r.test ? esc(r.test) : "<span style='color:var(--s-red)'>none</span>"}</td>
+            <td class="tiny dim">${esc(r.evi)}</td>
+          </tr>`;
+        }))}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+/* ==================================================== VIEW 8 — TESTING === */
+function viewTesting() {
+  const t = PROJECT.tests;
+  const pass = t.filter(x => x.st === "Passed").length;
+  const fail = t.filter(x => x.st === "Failed").length;
+  const notrun = t.filter(x => x.st === "Not Run").length;
+  const rate = Math.round(pass / (pass + fail) * 100);
+  const criticalUntested = PROJECT.requirements
+    .filter(r => r.pri === "Critical" && !r.test).map(r => r.id);
+
+  const byType = {};
+  t.forEach(x => (byType[x.type] = byType[x.type] || []).push(x));
+
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Testing and validation</span>
+    <h1>Green suite, unproven system</h1>
+    <p>Every automated test passes. That is worth having, and it is not the same as evidence that the scoring is correct — the experiment designed to establish that has never been run.</p>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><span class="lab">Automated tests</span><span class="val">48</span><span class="note">15 files, executed 2026-09-09 in 3.05s</span></div>
+    <div class="metric"><span class="lab">Pass rate (executed)</span><span class="val">${rate}%</span><span class="note">${pass} passed · ${fail} failed of ${pass + fail} executed records</span></div>
+    <div class="metric"><span class="lab">Never run</span><span class="val">${notrun}</span><span class="note">Including the validation experiment the MVP depends on</span></div>
+    <div class="metric"><span class="lab">Untested critical requirements</span><span class="val">${criticalUntested.length}</span><span class="note">${criticalUntested.length ? esc(j(criticalUntested, ", ")) : "None — every critical requirement has a test"}</span></div>
+  </div>
+
+  <div class="note-band warn">The one failure below is a field measurement, not a broken test: hand-detection coverage misses the 90% gate on six of twelve recorded sessions. It is the reason Phase 0 is still At Risk after the code was written.</div>
+
+  ${j(Object.keys(byType).map(type => `
+    <div class="section">
+      <div class="sec-title"><h2>${esc(type)}</h2><span class="count">${byType[type].length} records</span></div>
+      <div class="scroll-x">
+        <table>
+          <thead><tr><th>ID</th><th>Objective</th><th>Requirement</th><th>Environment</th><th>Expected</th><th>Actual</th><th>Result</th><th>Evidence</th><th>Date</th></tr></thead>
+          <tbody>
+            ${j(byType[type].map(x => `<tr class="${x.st === "Failed" ? "flagged" : x.st === "Not Run" ? "warned" : ""}">
+              <td class="mono tiny"><strong>${esc(x.id)}</strong></td>
+              <td>${esc(x.n)}${x.note ? `<br><span class="tiny dim">${esc(x.note)}</span>` : ""}</td>
+              <td class="mono tiny">${esc(x.req)}</td>
+              <td class="tiny dim">${esc(x.env)}</td>
+              <td class="tiny">${esc(x.exp)}</td>
+              <td class="tiny">${esc(x.act)}</td>
+              <td>${badge(x.st)}</td>
+              <td class="evi">${esc(x.evi)}</td>
+              <td class="tiny num">${esc(x.date || "—")}</td>
+            </tr>`))}
+          </tbody>
+        </table>
+      </div>
+    </div>`))}`;
+}
+
+/* ====================================== VIEW 9 — RISKS, ISSUES, BLOCKERS = */
+const LEVELS = ["Low", "Medium", "High"];
+function riskMatrix() {
+  const cellClass = (pi, ii) => {
+    const score = (pi + 1) * (ii + 1);
+    return score >= 6 ? "hi" : score >= 3 ? "md" : "lo";
+  };
+  let html = `<div class="matrix">
+    <span class="mh"></span>${j(LEVELS.map(l => `<span class="mh">Impact: ${esc(l)}</span>`))}`;
+  [...LEVELS].reverse().forEach(prob => {
+    const pi = LEVELS.indexOf(prob);
+    html += `<span class="mh rh">Probability<br>${esc(prob)}</span>`;
+    LEVELS.forEach((imp, ii) => {
+      const inCell = PROJECT.risks.filter(r => r.prob === prob && r.imp === imp);
+      html += `<div class="cell ${cellClass(pi, ii)}">${j(inCell.map(r =>
+        `<span class="rid" title="${esc(r.d)}">${esc(r.id)}</span>`))}</div>`;
+    });
+  });
+  return html + `</div>`;
+}
+
+function viewRisks() {
+  const blocked = PROJECT.workItems.filter(w => w.st === "Blocked");
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Risks, issues and blockers</span>
+    <h1>What has happened, and what still might</h1>
+    <p>Two registers, deliberately separate. Risks are the PRD §18 forecast, quoted as written. Issues are defects and gaps that have already been observed in the repository or its runtime database. When a forecast risk becomes an observed issue, it is marked Realized and linked to it — R-04 has already made that trip.</p>
+  </div>
+
+  <div class="section">
+    <div class="sec-title"><h2>Issue register</h2><span class="count">${PROJECT.issues.length} recorded · ${PROJECT.issues.filter(i => i.st === "Open").length} open</span></div>
+    <ul class="none">
+      ${j(PROJECT.issues.map(i => `<li class="card">
+        <div class="tlhead">
+          <span class="mid">${esc(i.id)}</span>
+          <strong style="flex:1;min-width:200px">${esc(i.d)}</strong>
+          ${badge(i.sev, SEV[i.sev])}${badge(i.st)}
+        </div>
+        <p class="small dim" style="margin-top:6px">${esc(i.why)}</p>
+        <div class="chipline" style="margin-top:9px">
+          <span class="chip">${esc(i.cat)}</span>
+          <span class="chip">Owner: ${esc(i.owner)}</span>
+          <span class="chip">Identified ${esc(i.found)}</span>
+          <span class="chip">Related: ${esc(i.rel)}</span>
+        </div>
+        <p class="evi" style="margin-top:8px">Evidence — ${esc(i.evi)}</p>
+        ${i.res ? `<p class="small" style="margin-top:6px"><strong>Resolution:</strong> ${esc(i.res)}</p>` : ""}
+      </li>`))}
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="sec-title"><h2>Blocked work</h2><span class="count">${blocked.length} items</span></div>
+    ${blocked.length ? `<ul class="none">${j(blocked.map(w => `<li class="card">
+        <div class="tlhead"><span class="mid">${esc(w.id)}</span><strong style="flex:1">${esc(w.t)}</strong>${badge("Blocked")}</div>
+        <p class="small dim" style="margin-top:6px">${esc(w.n)}</p>
+        <div class="chipline" style="margin-top:8px"><span class="chip">Waiting on ${esc(j(w.deps, ", "))}</span><span class="chip">Progress held at ${pct(itemProgress(w))}</span></div>
+      </li>`))}</ul>` : `<p class="empty">No blocked items.</p>`}
+  </div>
+
+  <div class="section">
+    <div class="sec-title"><h2>Risk matrix</h2><span class="count">probability × impact</span> ${assumedTag(true)}</div>
+    <p class="small dim">The PRD lists these risks and their mitigations but assigns no probability or impact. Both axes were rated here and every rating is an assumption open to challenge.</p>
+    ${riskMatrix()}
+  </div>
+
+  <div class="section">
+    <div class="sec-title"><h2>Risk register</h2><span class="count">PRD §18, verbatim</span></div>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>ID</th><th>Risk</th><th>Category</th><th>Prob</th><th>Impact</th><th>If it happens</th><th>Mitigation</th><th>Status</th><th>Related</th><th>Owner</th></tr></thead>
+        <tbody>
+          ${j(PROJECT.risks.map(r => `<tr class="${r.st === "Realized" ? "flagged" : ""}">
+            <td class="mono tiny"><strong>${esc(r.id)}</strong></td>
+            <td>${esc(r.d)}${r.note ? `<br><span class="tiny dim">${esc(r.note)}</span>` : ""}</td>
+            <td class="tiny">${esc(r.cat)}</td>
+            <td class="tiny">${esc(r.prob)}</td>
+            <td class="tiny">${esc(r.imp)}</td>
+            <td class="tiny dim">${esc(r.impact)}</td>
+            <td class="tiny">${esc(r.mit)}</td>
+            <td>${badge(r.st)}</td>
+            <td class="tiny">${esc(r.rel)}</td>
+            <td class="tiny">${esc(r.owner)}</td>
+          </tr>`))}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+/* ================================================== VIEW 10 — DECISIONS === */
+function viewDecisions() {
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Decision log</span>
+    <h1>${PROJECT.decisions.length} decisions on record</h1>
+    <p>A decision is never quietly replaced. DEC-04 chose PySide6 and stays on the record, marked Superseded and linked to DEC-05, which chose the browser instead. Reading both is how anyone later understands why the built system does not match the PRD.</p>
+  </div>
+  <ul class="none">
+    ${j(PROJECT.decisions.map(d => `<li class="card section">
+      <div class="tlhead">
+        <span class="mid">${esc(d.id)}</span>
+        <h3 style="flex:1;min-width:220px">${esc(d.t)}</h3>
+        ${badge(d.st)} ${assumedTag(d.assumed)}
+      </div>
+      <dl class="kv">
+        <dt>Date</dt><dd class="num">${esc(d.date)}</dd>
+        <dt>Owner</dt><dd>${esc(d.owner)}</dd>
+        <dt>Context</dt><dd>${esc(d.ctx)}</dd>
+        <dt>Options</dt><dd>${j(d.opts.map(o => `<span class="chip">${esc(o)}</span>`), " ")}</dd>
+        <dt>Selected</dt><dd><strong>${esc(d.sel)}</strong></dd>
+        <dt>Rationale</dt><dd>${esc(d.why)}</dd>
+        <dt>Tradeoffs</dt><dd>${esc(d.cons)}</dd>
+        <dt>Components</dt><dd class="evi">${esc(d.comp)}</dd>
+        <dt>Source</dt><dd class="tiny dim">${esc(d.src)}</dd>
+        ${d.sup ? `<dt>Superseded by</dt><dd><a href="#decisions">${esc(d.sup)}</a></dd>` : ""}
+        ${d.supersedes ? `<dt>Supersedes</dt><dd><a href="#decisions">${esc(d.supersedes)}</a></dd>` : ""}
+      </dl>
+    </li>`))}
+  </ul>`;
+}
+
+/* =================================================== VIEW 11 — ACTIVITY === */
+function viewActivity() {
+  const row = (label, val) => val ? `<dt>${esc(label)}</dt><dd class="small">${esc(val)}</dd>` : "";
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Activity and update history</span>
+    <h1>Append-only changelog</h1>
+    <p>Newest first. Entries are never rewritten — a correction is a new entry that says what changed and why. Everything before the dashboard existed was reconstructed from git history.</p>
+  </div>
+  <div class="tl">
+    ${j(PROJECT.activity.map(a => `<div class="tlitem done">
+      <div class="card">
+        <div class="tlhead"><span class="mid">${esc(a.ts)}</span><span class="chip">${esc(a.src)}</span></div>
+        <p style="margin-top:4px">${esc(a.sum)}</p>
+        <dl class="kv" style="margin-top:10px">
+          ${row("Added", a.added)}${row("Changed", a.changed)}${row("Completed", a.done)}
+          ${row("New blockers", a.blockers)}${row("Decisions", a.dec)}${row("Progress", a.prog)}
+        </dl>
+        ${a.note ? `<div class="note-band" style="margin-top:10px">${esc(a.note)}</div>` : ""}
+      </div>
+    </div>`))}
+  </div>`;
+}
+
+/* =============================================== VIEW 12 — STAKEHOLDER === */
+function viewStakeholder() {
+  const m = PROJECT.meta, op = overallProgress();
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Stakeholder summary · ${esc(m.lastUpdated)}</span>
+    <h1>Where MotionMentor stands</h1>
+    <p class="small muted">Plain-language summary, safe to share and to print. Engineering detail lives in the other views.</p>
+  </div>
+  <div class="stake">
+    <div class="section">
+      <h2>What this project is</h2>
+      <p class="lede">${esc(m.mission)}</p>
+      <p class="small dim">It runs on one ordinary computer with one USB camera. Nothing leaves the machine.</p>
+    </div>
+    <hr class="rule">
+    <div class="section">
+      <h2>Where it stands today</h2>
+      <div class="chipline">${badge(m.health)}<span class="chip">${esc(m.currentPhase)}</span><span class="chip">${pct(op)} of planned work complete</span></div>
+      <p>The system works end to end. You can record an expert, record a trainee, and get back a score with specific, timestamped coaching points and a side-by-side video replay. Every automated test passes.</p>
+      <p>What is not yet true is that the scores can be trusted. The expert benchmark was built from a single demonstration rather than the five the plan calls for, one of the six scoring components is not functioning, and half the recordings so far did not track the hand reliably enough to score. Until those are fixed, the numbers the system produces are provisional.</p>
+    </div>
+    <hr class="rule">
+    <div class="section">
+      <h2>Progress by phase</h2>
+      <div class="phasebars">
+        ${j(PROJECT.phases.map(p => {
+          const pr = phaseProgress(p.id), hue = STATUS[p.status] ? STATUS[p.status].hue : "gray";
+          return `<div class="phasebar">
+            <span>${esc(p.num)} · ${esc(p.name)} ${badge(p.status)}</span>
+            ${bar(pr, hue)}<span class="pct">${pct(pr)}</span>
+          </div>`;
+        }))}
+      </div>
+    </div>
+    <hr class="rule">
+    <div class="two">
+      <div class="section">
+        <h2>Recently finished</h2>
+        <ul class="tight small">${j(m.recentWins.map(w => `<li>${esc(w.text)}</li>`))}</ul>
+      </div>
+      <div class="section">
+        <h2>Being worked on now</h2>
+        <ul class="tight small">${j(PROJECT.workItems.filter(w => w.st === "Ready" || w.st === "In Progress").slice(0, 6).map(w => `<li>${esc(w.t)}</li>`))}</ul>
+      </div>
+    </div>
+    <hr class="rule">
+    <div class="two">
+      <div class="section">
+        <h2>Main risks</h2>
+        <ul class="tight small">
+          <li><strong>The expert benchmark rests on one recording.</strong> Everything the system judges is measured against it, so it has to represent how the task is really done — not one particular attempt.</li>
+          <li><strong>Camera conditions are not yet reliable.</strong> Half the recordings lost sight of the hand often enough to invalidate the result.</li>
+          <li><strong>Nothing has been checked against expert judgment.</strong> No qualified reviewer has yet scored the same attempts to compare.</li>
+        </ul>
+      </div>
+      <div class="section">
+        <h2>Next milestone</h2>
+        <p><strong>${esc(PROJECT.milestones.find(x => x.id === "MVP").name)}</strong></p>
+        <p class="small dim">Working target ${esc(PROJECT.milestones.find(x => x.id === "MVP").target)}. This date is projected from the original effort estimates, not a commitment — the plan contains no dates.</p>
+      </div>
+    </div>
+    <hr class="rule">
+    <div class="section">
+      <h2>Decisions and help needed</h2>
+      <ul class="tight small">
+        <li><strong>Confirm the added hardening phase.</strong> The plan goes straight from the current interface work to object and tool tracking. Doing that before validating the scoring would build on an unproven base. A hardening phase has been proposed for this and needs a yes or no.</li>
+        <li><strong>A qualified reviewer is needed.</strong> Two independent experts scoring a sample of attempts is the only way to know whether the system agrees with human judgment. Nobody is currently lined up.</li>
+        <li><strong>Expert recording time.</strong> Five or more clean demonstrations of the benchmark task are required before anything else can proceed.</li>
+      </ul>
+    </div>
+  </div>`;
+}
+
+/* ================================================= VIEW 13 — DATA I/O ==== */
+function viewData() {
+  return `
+  <div class="view-head">
+    <span class="eyebrow">Export and import</span>
+    <h1>Take the data with you</h1>
+    <p>All project content lives in one <code>PROJECT</code> object at the top of this file. Everything below generates from it. Reports are copied to your clipboard and shown in the panel — file downloads are blocked inside a published page, so copy and paste is the reliable route.</p>
+  </div>
+  <div class="exportgrid">
+    <button class="btn primary" type="button" data-x="json">Export project as JSON</button>
+    <button class="btn" type="button" data-x="md">Copy Markdown status report</button>
+    <button class="btn" type="button" data-x="weekly">Weekly progress summary</button>
+    <button class="btn" type="button" data-x="blocked">Blocked tasks report</button>
+    <button class="btn" type="button" data-x="next">Next actions report</button>
+    <button class="btn" type="button" data-x="stake">Stakeholder summary</button>
+    <button class="btn" type="button" onclick="window.print()">Print / save as PDF</button>
+  </div>
+  <div class="section">
+    <div class="sec-title"><h2>Output</h2><span class="count" id="ioStatus">Choose a report above, or paste JSON below and import it</span></div>
+    <textarea class="io" id="ioBox" spellcheck="false" placeholder="Report output appears here. To import, paste a previously exported JSON object and press Import."></textarea>
+    <div class="exportgrid">
+      <button class="btn" type="button" id="btnImport">Import JSON from the box</button>
+      <button class="btn" type="button" id="btnCopy">Copy box to clipboard</button>
+    </div>
+  </div>
+  <div class="note-band">An import replaces the in-memory project for this browser session only and re-renders every view, so you can check a change before committing it. To make it permanent, paste the JSON back into the <code>PROJECT</code> object in <code>docs/command-center.html</code>.</div>`;
+}
+
+/* ================================================= VIEW 14 — PROTOCOL ==== */
+function viewProtocol() {
+  const u = PROJECT.updateProtocol;
+  return `
+  <div class="view-head">
+    <span class="eyebrow">How to update this dashboard</span>
+    <h1>Say what changed</h1>
+    <p>${esc(u.intro)}</p>
+  </div>
+  <div class="two">
+    <div class="card section">
+      <div class="sec-title"><h2>What happens to an update</h2></div>
+      <ol class="tight small">${j(u.steps.map(s => `<li>${esc(s)}</li>`))}</ol>
+    </div>
+    <div class="card section">
+      <div class="sec-title"><h2>Rules that do not bend</h2></div>
+      <ul class="tight small">${j(u.rules.map(s => `<li>${esc(s)}</li>`))}</ul>
+    </div>
+  </div>
+  <div class="card section">
+    <div class="sec-title"><h2>Example updates for this project</h2><span class="count">informal is fine</span></div>
+    <ul class="none">${j(u.examples.map(e => `<li class="note-band" style="font-family:'IBM Plex Mono',monospace;font-size:.8rem">${esc(e)}</li>`))}</ul>
+  </div>
+  <div class="card section">
+    <div class="sec-title"><h2>Editing the file directly</h2></div>
+    <p class="small">Open <code>docs/command-center.html</code> and edit the <code>PROJECT</code> object between the DATA markers near the top of the script. Add a work item to <code>workItems</code>, change its <code>st</code> field, and every progress figure, phase bar and metric card recalculates on reload. Nothing below the DATA END marker needs to change.</p>
+    <p class="small dim">Status values: <code>Backlog</code>, <code>Ready</code>, <code>In Progress</code>, <code>Blocked</code>, <code>Testing</code>, <code>Complete</code>. A blocked item should carry <code>last:</code> with the progress figure it had when it was blocked.</p>
+  </div>`;
+}
+
+/* ================================================================ reports */
+function reportMarkdown() {
+  const m = PROJECT.meta, op = overallProgress();
+  const L = [];
+  L.push(`# ${m.name} — Status Report`, "", `**Updated:** ${m.lastUpdated}  `, `**Phase:** ${m.currentPhase}  `,
+    `**Health:** ${m.health}  `, `**Overall progress:** ${pct(op)}`, "", `> ${m.mission}`, "",
+    `## Where it stands`, "", m.healthWhy, "", `## Progress by phase`, "",
+    `| Phase | Status | Progress |`, `| --- | --- | --- |`);
+  PROJECT.phases.forEach(p => L.push(`| ${p.num} ${p.name} | ${p.status} | ${pct(phaseProgress(p.id))} |`));
+  L.push("", `## Open issues`, "");
+  PROJECT.issues.filter(i => i.st === "Open").forEach(i => L.push(`- **${i.id}** (${i.sev}) ${i.d}`, `  - Evidence: ${i.evi}`));
+  L.push("", `## Next actions`, "");
+  m.nextActions.forEach((a, i) => L.push(`${i + 1}. ${a}`));
+  L.push("", `## Next milestone`, "");
+  const ms = PROJECT.milestones.find(x => !x.actual);
+  if (ms) L.push(`**${ms.id} — ${ms.name}** · target ${ms.target || "Not scheduled"}${ms.targetAssumed ? " (ASSUMED)" : ""} · confidence ${ms.confidence}`, "", ms.note);
+  return L.join("\n");
+}
+function reportBlocked() {
+  const b = PROJECT.workItems.filter(w => w.st === "Blocked");
+  const L = [`# Blocked work — ${PROJECT.meta.lastUpdated}`, "", `${b.length} blocked item(s).`, ""];
+  b.forEach(w => L.push(`## ${w.id} — ${w.t}`, "", `- Waiting on: ${j(w.deps, ", ") || "unspecified"}`,
+    `- Progress held at: ${pct(itemProgress(w))}`, `- Phase: ${phaseNum(w.p)}`, `- Note: ${w.n}`, ""));
+  const issues = PROJECT.issues.filter(i => i.st === "Open" && i.sev === "Critical");
+  L.push(`## Critical open issues behind these blocks`, "");
+  issues.forEach(i => L.push(`- **${i.id}** ${i.d}`, `  - ${i.why}`));
+  return L.join("\n");
+}
+function reportNext() {
+  const ready = PROJECT.workItems.filter(w => w.st === "Ready" || w.st === "In Progress")
+    .sort((a, b) => ["Critical","High","Medium","Low"].indexOf(a.pri) - ["Critical","High","Medium","Low"].indexOf(b.pri));
+  const L = [`# Next actions — ${PROJECT.meta.lastUpdated}`, "", `## Stated priorities`, ""];
+  PROJECT.meta.nextActions.forEach((a, i) => L.push(`${i + 1}. ${a}`));
+  L.push("", `## Actionable work items (${ready.length})`, "");
+  ready.forEach(w => L.push(`- **${w.id}** [${w.pri}] ${w.t}`, `  - ${w.d}`,
+    `  - Acceptance: ${j(w.ac, " · ")}`, w.deps.length ? `  - Depends on: ${j(w.deps, ", ")}` : ""));
+  return L.filter(Boolean).join("\n");
+}
+function reportWeekly() {
+  const L = [`# Weekly progress — week ending ${PROJECT.meta.lastUpdated}`, "", `**Overall:** ${pct(overallProgress())} · **Health:** ${PROJECT.meta.health}`, "",
+    `## Completed this period`, ""];
+  PROJECT.activity.slice(0, 8).forEach(a => L.push(`- ${a.ts} — ${a.sum}${a.done ? ` (${a.done})` : ""}`));
+  L.push("", `## Now in flight`, "");
+  PROJECT.workItems.filter(w => w.st === "In Progress" || w.st === "Ready").forEach(w => L.push(`- ${w.id} ${w.t} [${w.pri}]`));
+  L.push("", `## Blocked`, "");
+  PROJECT.workItems.filter(w => w.st === "Blocked").forEach(w => L.push(`- ${w.id} ${w.t} — waiting on ${j(w.deps, ", ")}`));
+  L.push("", `## Risks needing attention`, "");
+  PROJECT.issues.filter(i => i.sev === "Critical" || i.sev === "High").forEach(i => L.push(`- ${i.id} (${i.sev}) ${i.d}`));
+  return L.join("\n");
+}
+function reportStakeholder() {
+  const m = PROJECT.meta;
+  const L = [`# ${m.name}`, "", m.mission, "", `**Status:** ${m.health} · ${m.currentPhase} · ${pct(overallProgress())} complete`, "",
+    m.healthWhy, "", `## Progress by phase`, ""];
+  PROJECT.phases.forEach(p => L.push(`- ${p.num} ${p.name}: ${p.status} — ${pct(phaseProgress(p.id))}`));
+  L.push("", `## Recently finished`, "");
+  m.recentWins.forEach(w => L.push(`- ${w.text}`));
+  L.push("", `## Decisions and help needed`, "",
+    "- Confirm the proposed MVP hardening phase (DEC-09).",
+    "- Identify at least two qualified reviewers to independently score a sample of attempts.",
+    "- Schedule expert recording time for five or more demonstrations of the benchmark task.");
+  return L.join("\n");
+}
+
+/* ================================================================= router */
+const RENDERERS = {
+  overview: viewOverview, roadmap: viewRoadmap, timeline: viewTimeline, work: viewWork,
+  architecture: viewArchitecture, hardware: viewHardware, requirements: viewRequirements,
+  testing: viewTesting, risks: viewRisks, decisions: viewDecisions, activity: viewActivity,
+  stakeholder: viewStakeholder, data: viewData, protocol: viewProtocol
+};
+let currentView = "overview";
+
+function render(keepScroll) {
+  const y = window.scrollY;
+  const fn = RENDERERS[currentView] || viewOverview;
+  paint($("#viewRoot"), `<div class="view">${fn()}</div>`);
+  renderNav(currentView);
+  document.title = `MotionMentor Command Center`;
+  wireView();
+  if (keepScroll) window.scrollTo(0, y); else window.scrollTo(0, 0);
+}
+
+function route() {
+  const id = (location.hash || "#overview").slice(1);
+  currentView = RENDERERS[id] ? id : "overview";
+  render(false);
+}
+
+/* ================================================== per-view wiring ====== */
+function wireView() {
+  if (currentView === "work") {
+    const bind = (sel, key) => {
+      const el = $(sel); if (!el) return;
+      el.addEventListener("change", () => { filters[key] = el.value; render(true); });
+    };
+    bind("#fPhase", "phase"); bind("#fStream", "stream"); bind("#fPri", "pri");
+    bind("#fSt", "st"); bind("#fOwner", "owner");
+    const q = $("#fQ");
+    if (q) q.addEventListener("input", () => {
+      filters.q = q.value;
+      render(true);
+      const again = $("#fQ");
+      if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+    });
+    const clear = $("#fClear");
+    if (clear) clear.addEventListener("click", () => {
+      Object.keys(filters).forEach(k => filters[k] = "");
+      render(true);
+    });
+    document.querySelectorAll(".wi").forEach(b =>
+      b.addEventListener("click", () => openItem(b.dataset.item)));
+  }
+
+  if (currentView === "data") {
+    const box = $("#ioBox"), status = $("#ioStatus");
+    const put = (text, msg) => {
+      box.value = text;
+      status.textContent = msg;
+      if (navigator.clipboard) navigator.clipboard.writeText(text)
+        .then(() => status.textContent = msg + " — copied to clipboard")
+        .catch(() => { /* clipboard blocked; the text is in the box either way */ });
+    };
+    const REPORTS = {
+      json:    () => put(JSON.stringify(PROJECT, null, 2), "Full project data as JSON"),
+      md:      () => put(reportMarkdown(), "Markdown status report"),
+      weekly:  () => put(reportWeekly(), "Weekly progress summary"),
+      blocked: () => put(reportBlocked(), "Blocked tasks report"),
+      next:    () => put(reportNext(), "Next actions report"),
+      stake:   () => put(reportStakeholder(), "Stakeholder summary")
+    };
+    document.querySelectorAll("[data-x]").forEach(b =>
+      b.addEventListener("click", () => REPORTS[b.dataset.x]()));
+
+    $("#btnCopy").addEventListener("click", () => {
+      if (navigator.clipboard) navigator.clipboard.writeText(box.value)
+        .then(() => status.textContent = "Copied to clipboard")
+        .catch(() => status.textContent = "Clipboard unavailable — select the text and copy manually");
+    });
+
+    $("#btnImport").addEventListener("click", () => {
+      let parsed;
+      try { parsed = JSON.parse(box.value); }
+      catch (e) { status.textContent = "That is not valid JSON: " + e.message; return; }
+      let clean;
+      try { clean = sanitizeImport(parsed); }
+      catch (e) { status.textContent = e.message; return; }
+      if (!clean || !Array.isArray(clean.workItems) || !Array.isArray(clean.phases)) {
+        status.textContent = "Import needs an object with workItems and phases arrays. Nothing was changed.";
+        return;
+      }
+      Object.keys(PROJECT).forEach(k => delete PROJECT[k]);
+      Object.assign(PROJECT, clean);
+      status.textContent = `Imported — ${PROJECT.workItems.length} work items, overall now ${pct(overallProgress())}. This session only.`;
+      render(true);
+    });
+  }
+}
+
+/* ================================================== drawer, theme, boot == */
+function closeDrawer() { $("#drawer").classList.remove("on"); }
+$("#drawer").addEventListener("click", e => { if (e.target.id === "drawer") closeDrawer(); });
+$("#drawerPanel").addEventListener("click", e => { if (e.target.id === "drawerClose") closeDrawer(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+
+const THEME_KEY = "mm-cc-theme";
+function systemDark() { return window.matchMedia("(prefers-color-scheme: dark)").matches; }
+function currentTheme() { return document.documentElement.dataset.theme || (systemDark() ? "dark" : "light"); }
+function applyTheme(t) {
+  if (t) document.documentElement.dataset.theme = t;
+  $("#themeBtn").textContent = currentTheme() === "dark" ? "Switch to light" : "Switch to dark";
+}
+try { const saved = localStorage.getItem(THEME_KEY); if (saved) applyTheme(saved); else applyTheme(null); }
+catch (e) { applyTheme(null); }
+$("#themeBtn").addEventListener("click", () => {
+  const next = currentTheme() === "dark" ? "light" : "dark";
+  applyTheme(next);
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* private mode: theme is session-only */ }
+});
+
+$("#footStamp").textContent = `Updated ${PROJECT.meta.lastUpdated} · ${PROJECT.workItems.length} items`;
+window.addEventListener("hashchange", route);
+route();
+</script>

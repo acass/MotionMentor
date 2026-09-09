@@ -1,0 +1,206 @@
+- generic [ref=e2]:
+  - navigation "Dashboard sections" [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: Project Command Center
+      - text: MotionMentor Explainable hand-motion skill assessment
+    - generic [ref=e6]:
+      - generic [ref=e7]: Status
+      - link "1 Executive overview" [ref=e8] [cursor=pointer]:
+        - /url: "#overview"
+        - generic [ref=e9]: "1"
+        - generic [ref=e10]: Executive overview
+      - link "2 Phase roadmap" [ref=e11] [cursor=pointer]:
+        - /url: "#roadmap"
+        - generic [ref=e12]: "2"
+        - generic [ref=e13]: Phase roadmap
+      - link "3 Milestone timeline" [ref=e14] [cursor=pointer]:
+        - /url: "#timeline"
+        - generic [ref=e15]: "3"
+        - generic [ref=e16]: Milestone timeline
+      - generic [ref=e17]: Delivery
+      - link "4 Work tracker" [ref=e18] [cursor=pointer]:
+        - /url: "#work"
+        - generic [ref=e19]: "4"
+        - generic [ref=e20]: Work tracker
+      - generic [ref=e21]: System
+      - link "5 System architecture" [ref=e22] [cursor=pointer]:
+        - /url: "#architecture"
+        - generic [ref=e23]: "5"
+        - generic [ref=e24]: System architecture
+      - link "6 Hardware matrix" [ref=e25] [cursor=pointer]:
+        - /url: "#hardware"
+        - generic [ref=e26]: "6"
+        - generic [ref=e27]: Hardware matrix
+      - link "7 Requirements" [ref=e28] [cursor=pointer]:
+        - /url: "#requirements"
+        - generic [ref=e29]: "7"
+        - generic [ref=e30]: Requirements
+      - link "8 Testing & validation" [ref=e31] [cursor=pointer]:
+        - /url: "#testing"
+        - generic [ref=e32]: "8"
+        - generic [ref=e33]: Testing & validation
+      - generic [ref=e34]: Governance
+      - link "9 Risks & issues" [ref=e35] [cursor=pointer]:
+        - /url: "#risks"
+        - generic [ref=e36]: "9"
+        - generic [ref=e37]: Risks & issues
+      - link "10 Decision log" [ref=e38] [cursor=pointer]:
+        - /url: "#decisions"
+        - generic [ref=e39]: "10"
+        - generic [ref=e40]: Decision log
+      - link "11 Activity history" [ref=e41] [cursor=pointer]:
+        - /url: "#activity"
+        - generic [ref=e42]: "11"
+        - generic [ref=e43]: Activity history
+      - generic [ref=e44]: Share
+      - link "12 Stakeholder view" [ref=e45] [cursor=pointer]:
+        - /url: "#stakeholder"
+        - generic [ref=e46]: "12"
+        - generic [ref=e47]: Stakeholder view
+      - link "13 Export & import" [ref=e48] [cursor=pointer]:
+        - /url: "#data"
+        - generic [ref=e49]: "13"
+        - generic [ref=e50]: Export & import
+      - link "14 How to update this" [ref=e51] [cursor=pointer]:
+        - /url: "#protocol"
+        - generic [ref=e52]: "14"
+        - generic [ref=e53]: How to update this
+    - generic [ref=e54]:
+      - button "Switch to dark" [ref=e55] [cursor=pointer]
+      - generic [ref=e56]: Updated 2026-09-09 Â· 58 items
+  - main [ref=e57]:
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - generic [ref=e61]: Executive overview Â· last updated 2026-09-09
+        - heading "MotionMentor" [level=1] [ref=e62]
+        - paragraph [ref=e63]: Score a trainee's hand movement against an expert demonstration and explain, in plain language and with visual evidence, exactly what to correct.
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - generic [ref=e69]:
+              - generic [ref=e70]: Project health
+              - generic [ref=e71]:
+                - strong [ref=e72]: At Risk
+                - generic [ref=e73]:
+                  - generic [aria-hidden] [ref=e74]: Â·
+                  - text: Phase 4 â€” MVP Hardening & Validation
+            - paragraph [ref=e75]: "Phases 0â€“3 are built and the full capture-to-feedback pipeline runs end to end, with 48/48 automated tests passing. But three MVP exit conditions are measurably unmet: every expert reference profile was built from a single demonstration (the PRD requires five), the smoothness component scores 0.0 on 19 of 21 recorded assessments, and 6 of 12 captures fall below the 90% hand-detection floor. The scores the system currently produces are not yet trustworthy."
+          - generic [ref=e76]:
+            - text: Most important current objective
+            - paragraph [ref=e77]: "Make the existing pipeline's scores defensible: multi-take expert references, a working smoothness component, and capture quality above the 90% coverage gate."
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - text: Next milestone
+            - heading "MVP Definition of Done (PRD Â§21)" [level=3] [ref=e80]
+            - generic [ref=e81]:
+              - term [ref=e82]: Target
+              - definition [ref=e83]:
+                - text: 2026-10-07
+                - generic [ref=e84]: ASSUMED
+              - term [ref=e85]: Status
+              - definition [ref=e86]:
+                - generic [ref=e87]:
+                  - generic [aria-hidden] [ref=e88]: â–²
+                  - text: At Risk
+              - term [ref=e89]: Confidence
+              - definition [ref=e90]:
+                - generic [ref=e91]:
+                  - generic [aria-hidden] [ref=e92]: â–²
+                  - text: Low
+          - generic [ref=e93]:
+            - text: Scope of record
+            - list [ref=e94]:
+              - listitem [ref=e95]: "PRD.md (952 lines, header reads Status: Ready for prototype development)"
+              - listitem [ref=e96]: README.md, configs/default.yaml, configs/activities/reach_and_pinch.yaml
+              - listitem [ref=e97]: src/motion_mentor/ â€” 8 subpackages read in full
+              - listitem [ref=e98]: tests/ â€” 15 files, 48 tests, executed 2026-09-09
+              - listitem [ref=e99]: data/motion_mentor.db â€” 12 sessions, 3 reference profiles, 21 assessment results
+              - listitem [ref=e100]: git log â€” 8 commits, all authored 2026-09-09 by Allen Cass
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - generic [ref=e103]: Overall progress
+          - generic [ref=e104]: 56%
+          - generic [ref=e105]: 32 of 58 work items complete
+        - generic [ref=e106]:
+          - generic [ref=e107]: Phases built
+          - generic [ref=e108]: 4 / 8
+          - generic [ref=e109]: P0â€“P3 delivered; P0 exit criteria unmet
+        - generic [ref=e110]:
+          - generic [ref=e111]: Automated tests
+          - generic [ref=e112]: 48 / 48
+          - generic [ref=e113]: All passing Â· 15 files Â· 3.05s
+        - generic [ref=e114]:
+          - generic [ref=e115]: Open issues
+          - generic [ref=e116]: "8"
+          - generic [ref=e117]: 2 critical
+        - generic [ref=e118]:
+          - generic [ref=e119]: Blocked items
+          - generic [ref=e120]: "2"
+          - generic [ref=e121]: Both blocked behind ISS-02
+      - group [ref=e122]:
+        - generic "How 56% was calculated" [ref=e123] [cursor=pointer]
+      - generic [ref=e124]:
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - heading "Top blockers and risks" [level=2] [ref=e127]
+            - generic [ref=e128]: 3 of 8 open issues
+          - list [ref=e129]:
+            - listitem [ref=e130]:
+              - generic [ref=e132]:
+                - generic [aria-hidden] [ref=e133]: Â·
+                - text: Critical
+              - generic [ref=e134]:
+                - strong [ref=e135]: ISS-02
+                - text: Every reference profile was built from a single expert demonstration. The PRD MVP Definition of Done requires at least five. The variability envelope the whole scoring model rests on has never been computed from real variation. This blocks the MVP milestone and the validation experiment. reference_profiles.total_demonstrations = 1 on all 3 rows
+            - listitem [ref=e136]:
+              - generic [ref=e138]:
+                - generic [aria-hidden] [ref=e139]: Â·
+                - text: Critical
+              - generic [ref=e140]:
+                - strong [ref=e141]: ISS-01
+                - text: Smoothness component scores exactly 0.0 on 19 of 21 stored assessments, including runs scoring 100 on pose, trajectory and orientation. A component carrying 10% of the weight is contributing a flat penalty to every score. Unit tests pass, so the fault is in the feature data reaching the scorer. component_scores_json across assessment_results
+            - listitem [ref=e142]:
+              - generic [ref=e144]:
+                - generic [aria-hidden] [ref=e145]: Â·
+                - text: High
+              - generic [ref=e146]:
+                - strong [ref=e147]: ISS-05
+                - text: Hand-detection coverage falls below the 90% gate on six of twelve recorded sessions, as low as 58.7%. Phase 0's primary exit criterion. Two of the failing sessions used the synthetic camera and should be discounted; four are genuine capture failures. detection_coverage_pct across 12 sessions
+        - generic [ref=e148]:
+          - heading "Immediate next actions" [level=2] [ref=e150]
+          - list [ref=e151]:
+            - listitem [ref=e152]: Record at least five expert takes of reach_and_pinch and rebuild the reference profile from them (HRD-02 â†’ HRD-03).
+            - listitem [ref=e153]: Diagnose why the smoothness component returns 0.0 â€” inspect jerk features feeding scoring.py before changing the score mapping (HRD-01).
+            - listitem [ref=e154]: Re-run the seeded-error validation protocol from PRD Â§22 once a multi-take reference exists; this is the project's first real proof of correctness (HRD-06).
+            - listitem [ref=e155]: Fix capture conditions until coverage clears 90% on ten consecutive recordings (HRD-05).
+            - listitem [ref=e156]: Decide whether Phase 4 (MVP Hardening) is accepted as a real phase â€” it is currently a proposed insertion, not PRD text (DEC-09).
+      - generic [ref=e157]:
+        - generic [ref=e158]:
+          - heading "Recent accomplishments" [level=2] [ref=e159]
+          - generic [ref=e160]: each backed by a commit, file or database row
+        - list [ref=e161]:
+          - listitem [ref=e162]:
+            - generic [ref=e164]:
+              - generic [aria-hidden] [ref=e165]: "â—\x8f"
+              - text: Complete
+            - generic [ref=e166]: Constrained DTW alignment, tolerance envelopes, component scoring and the ranked feedback generator all landed and are unit-tested.commit 378ea67 Â· comparison/*.py Â· tests/test_scoring.py, test_dtw.py, test_feedback.py
+          - listitem [ref=e167]:
+            - generic [ref=e169]:
+              - generic [aria-hidden] [ref=e170]: "â—\x8f"
+              - text: Complete
+            - generic [ref=e171]: Interactive web dashboard with synchronized expert/trainee video, ghost-skeleton overlay and a REST API.commit 2e344ff Â· server.py Â· web/index.html, app.js
+          - listitem [ref=e172]:
+            - generic [ref=e174]:
+              - generic [aria-hidden] [ref=e175]: "â—\x8f"
+              - text: Complete
+            - generic [ref=e176]: Browser-based recording with cross-platform ffmpeg transcoding, so a session can be captured without the CLI.commit 0053c85 Â· server.py:223 /api/record_upload
+          - listitem [ref=e177]:
+            - generic [ref=e179]:
+              - generic [aria-hidden] [ref=e180]: "â—\x8f"
+              - text: Complete
+            - generic [ref=e181]: Repository consolidated â€” loose scripts folded into the package as comparison/pipeline.py and reporting/plots.py.commit 8f621c8
+          - listitem [ref=e182]:
+            - generic [ref=e184]:
+              - generic [aria-hidden] [ref=e185]: "â—\x8f"
+              - text: Complete
+            - generic [ref=e186]: "Full suite green: 48 of 48 tests pass in 3.05s.pytest run 2026-09-09"
