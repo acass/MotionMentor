@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 import pandas as pd
@@ -15,7 +16,7 @@ from pydantic import BaseModel
 
 from motion_mentor.app import MotionMentorApp
 from motion_mentor.storage.files import load_features_parquet, load_landmarks_parquet
-from motion_mentor.storage.models import Session
+from motion_mentor.storage.models import ReferenceProfile, Session
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +37,89 @@ app.add_middleware(
 
 _mentor_app: Optional[MotionMentorApp] = None
 
+GENERATED_CAMERA_IDS = frozenset({"synthetic", "canonical-demonstration"})
+
+
+class CaptureKind(str, Enum):
+    RECORDED = "recorded"
+    GENERATED = "generated"
+    MIXED = "mixed"
+    UNAVAILABLE = "unavailable"
+
 
 def get_mentor_app() -> MotionMentorApp:
     global _mentor_app
     if _mentor_app is None:
         _mentor_app = MotionMentorApp()
     return _mentor_app
+
+
+def get_capture_kind(session: Session) -> CaptureKind:
+    """Classify whether a stored session came from a real camera."""
+    if session.camera_id in GENERATED_CAMERA_IDS:
+        return CaptureKind.GENERATED
+    return CaptureKind.RECORDED
+
+
+def get_reference_representative(
+    mentor: MotionMentorApp,
+    profile: ReferenceProfile,
+) -> Optional[Session]:
+    """Load the session whose video and landmarks represent a reference."""
+    return mentor.db.get_session(profile.medoid_session_id)
+
+
+def get_reference_capture_kind(
+    mentor: MotionMentorApp,
+    profile: ReferenceProfile,
+) -> CaptureKind:
+    """Classify a reference from every expert take included in it."""
+    kinds = set()
+    for session_id in profile.expert_session_ids:
+        session = mentor.db.get_session(session_id)
+        if not session:
+            return CaptureKind.UNAVAILABLE
+        kinds.add(get_capture_kind(session))
+    if len(kinds) != 1:
+        return CaptureKind.MIXED
+    return next(iter(kinds))
+
+
+def reference_source_priority(kind: CaptureKind) -> int:
+    """Prefer real recorded references over generated demonstrations."""
+    return {
+        CaptureKind.RECORDED: 0,
+        CaptureKind.GENERATED: 1,
+        CaptureKind.MIXED: 2,
+        CaptureKind.UNAVAILABLE: 3,
+    }[kind]
+
+
+def list_selectable_references(
+    mentor: MotionMentorApp,
+    activity_id: Optional[str] = None,
+) -> list[tuple[ReferenceProfile, CaptureKind]]:
+    """Return homogeneous, available references with their source classification."""
+    classified = []
+    for profile in mentor.db.list_reference_profiles():
+        if activity_id is not None and profile.activity_id != activity_id:
+            continue
+        kind = get_reference_capture_kind(mentor, profile)
+        if kind in {CaptureKind.RECORDED, CaptureKind.GENERATED}:
+            classified.append((profile, kind))
+    classified.sort(key=lambda item: reference_source_priority(item[1]))
+    return classified
+
+
+def get_preferred_reference(
+    mentor: MotionMentorApp,
+    activity_id: str,
+) -> Optional[ReferenceProfile]:
+    """Return the newest recorded reference, falling back to generated data."""
+    references = list_selectable_references(mentor, activity_id)
+    if not references:
+        return None
+    return references[0][0]
 
 
 # Request / Response Schemas
@@ -139,8 +217,22 @@ def get_session_features(session_id: str) -> Dict[str, Any]:
 def list_references() -> List[Dict[str, Any]]:
     """List all expert reference profiles."""
     mentor = get_mentor_app()
-    profiles = mentor.db.list_reference_profiles()
-    return [p.model_dump() for p in profiles]
+    output: List[Dict[str, Any]] = []
+    for profile, kind in list_selectable_references(mentor):
+        item = profile.model_dump()
+        representative = get_reference_representative(mentor, profile)
+        if representative:
+            item["representative_session"] = {
+                "session_id": representative.session_id,
+                "participant_id": representative.participant_id,
+                "camera_id": representative.camera_id,
+                "capture_kind": kind.value,
+            }
+        else:
+            item["representative_session"] = None
+        output.append(item)
+
+    return output
 
 
 @app.get("/api/references/{reference_id}")
@@ -163,10 +255,16 @@ def get_reference(reference_id: str) -> Dict[str, Any]:
 
 
 @app.get("/api/assessments")
-def list_assessments(attempt_session_id: Optional[str] = Query(None)) -> List[Dict[str, Any]]:
-    """List assessment results with optional attempt session filter."""
+def list_assessments(
+    attempt_session_id: Optional[str] = Query(None),
+    reference_id: Optional[str] = Query(None),
+) -> List[Dict[str, Any]]:
+    """List assessment results with optional attempt and reference filters."""
     mentor = get_mentor_app()
-    assessments = mentor.db.list_assessments(attempt_session_id=attempt_session_id)
+    assessments = mentor.db.list_assessments(
+        attempt_session_id=attempt_session_id,
+        reference_profile_id=reference_id,
+    )
     return [a.model_dump() for a in assessments]
 
 
@@ -190,10 +288,10 @@ def compare_attempt(req: CompareRequest) -> Dict[str, Any]:
 
     ref_id = req.reference_id
     if not ref_id:
-        latest = mentor.db.get_latest_reference_profile(attempt.activity_id)
-        if not latest:
+        preferred = get_preferred_reference(mentor, attempt.activity_id)
+        if not preferred:
             raise HTTPException(status_code=400, detail="No reference profile found for this activity")
-        ref_id = latest.reference_id
+        ref_id = preferred.reference_id
 
     from motion_mentor.comparison.pipeline import compare_attempt_to_reference
     try:
@@ -351,8 +449,12 @@ def record_upload(req: RecordUploadRequest) -> Dict[str, Any]:
     }
 
 
-def rebuild_reference_for_activity(mentor: MotionMentorApp, activity_id: str) -> Optional[Dict[str, Any]]:
-    """Create a new reference from every quality-passing expert take for an activity."""
+def rebuild_reference_for_activity(
+    mentor: MotionMentorApp,
+    activity_id: str,
+    anchor_session: Optional[Session] = None,
+) -> Optional[Dict[str, Any]]:
+    """Create a reference from compatible, quality-passing expert takes."""
     from motion_mentor.comparison.pipeline import prepare_session_features
     from motion_mentor.comparison.reference import ReferenceProfileBuilder
 
@@ -364,6 +466,10 @@ def rebuild_reference_for_activity(mentor: MotionMentorApp, activity_id: str) ->
     expert_sessions = [
         session for session in mentor.db.list_sessions(activity_id=activity_id, role="expert")
         if session.quality_summary and session.quality_summary.meets_criteria
+        and (
+            anchor_session is None
+            or get_capture_kind(session) == get_capture_kind(anchor_session)
+        )
     ]
     if not expert_sessions:
         logger.warning("Skipping reference rebuild: no quality-passing expert takes for %s", activity_id)
@@ -387,9 +493,19 @@ def process_completed_session(
 ) -> tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
     """Refresh the expert reference or assess a trainee session after recording."""
     if session.role == "expert":
-        return None, rebuild_reference_for_activity(mentor, session.activity_id)
+        if not session.quality_summary or not session.quality_summary.meets_criteria:
+            logger.warning(
+                "Skipping reference rebuild: expert take %s did not meet quality criteria",
+                session.session_id,
+            )
+            return None, None
+        return None, rebuild_reference_for_activity(
+            mentor,
+            session.activity_id,
+            anchor_session=session,
+        )
 
-    reference = mentor.db.get_latest_reference_profile(session.activity_id)
+    reference = get_preferred_reference(mentor, session.activity_id)
     if not reference:
         return None, None
 

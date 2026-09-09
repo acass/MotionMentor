@@ -399,13 +399,23 @@ class DatabaseManager:
                 return None
             return self._row_to_assessment(row)
 
-    def list_assessments(self, attempt_session_id: Optional[str] = None) -> List[AssessmentResult]:
-        """List assessments with optional session filter."""
+    def list_assessments(
+        self,
+        attempt_session_id: Optional[str] = None,
+        reference_profile_id: Optional[str] = None,
+    ) -> List[AssessmentResult]:
+        """List assessments with optional attempt and reference filters."""
         query = "SELECT * FROM assessment_results"
         params: List[str] = []
+        conditions: List[str] = []
         if attempt_session_id:
-            query += " WHERE attempt_session_id = ?"
+            conditions.append("attempt_session_id = ?")
             params.append(attempt_session_id)
+        if reference_profile_id:
+            conditions.append("reference_profile_id = ?")
+            params.append(reference_profile_id)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY created_at DESC;"
 
         with self.get_connection() as conn:
@@ -429,4 +439,3 @@ class DatabaseManager:
             feedback=feedback_list,
             created_at=row["created_at"],
         )
-

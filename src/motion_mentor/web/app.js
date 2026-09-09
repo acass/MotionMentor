@@ -217,13 +217,7 @@ async function loadInitialData() {
     populateActivityDropdown();
     populateReferenceDropdown();
     populateAttemptDropdown();
-
-    if (state.sessions.length > 0) {
-      // Find latest trainee session or default to first
-      const traineeSess = state.sessions.find(s => s.role === 'trainee') || state.sessions[0];
-      dom.attemptSelect.value = traineeSess.session_id;
-      await onAttemptChange();
-    }
+    await onAttemptChange();
   } catch (err) {
     console.error('Failed to load initial data:', err);
   }
@@ -244,21 +238,34 @@ function populateActivityDropdown() {
 
 function populateReferenceDropdown() {
   dom.referenceSelect.innerHTML = '';
-  state.references.forEach((r, idx) => {
+  const activityReferences = state.currentActivity
+    ? state.references.filter(r => r.activity_id === state.currentActivity.activity_id)
+    : state.references;
+
+  activityReferences.forEach((r) => {
     const opt = document.createElement('option');
     opt.value = r.reference_id;
-    opt.textContent = `Ref v${r.version} (${r.total_demonstrations} take${r.total_demonstrations > 1 ? 's' : ''}, ${r.duration_mean_sec}s)`;
+    const representative = r.representative_session;
+    const sourceLabel = {
+      recorded: 'RECORDED',
+      generated: 'GENERATED',
+    }[representative?.capture_kind] || 'UNAVAILABLE';
+    const representativeId = representative?.session_id
+      ? representative.session_id.substring(0, 8)
+      : 'unknown';
+    opt.textContent = `${sourceLabel} · ${representativeId} · ${r.total_demonstrations} take${r.total_demonstrations > 1 ? 's' : ''} · ${r.duration_mean_sec}s`;
     dom.referenceSelect.appendChild(opt);
   });
-  if (state.references.length > 0) {
-    state.currentReference = state.references[0];
-  }
+  state.currentReference = activityReferences[0] || null;
 }
 
 function populateAttemptDropdown() {
   dom.attemptSelect.innerHTML = '';
-  const trainees = state.sessions.filter(s => s.role === 'trainee');
-  const items = trainees.length > 0 ? trainees : state.sessions;
+  const activitySessions = state.currentActivity
+    ? state.sessions.filter(s => s.activity_id === state.currentActivity.activity_id)
+    : state.sessions;
+  const trainees = activitySessions.filter(s => s.role === 'trainee');
+  const items = trainees.length > 0 ? trainees : activitySessions;
 
   items.forEach((s) => {
     const opt = document.createElement('option');
@@ -290,10 +297,13 @@ async function onReferenceChange() {
 
 async function onAttemptChange() {
   const sessId = dom.attemptSelect.value;
-  if (!sessId) return;
-
-  state.currentAttempt = state.sessions.find(s => s.session_id === sessId);
-  if (!state.currentAttempt) return;
+  const attempt = state.sessions.find(s => s.session_id === sessId);
+  if (!attempt) {
+    clearAttemptData();
+    await loadExpertSessionData();
+    return;
+  }
+  state.currentAttempt = attempt;
 
   // Set duration
   state.duration = Math.max(state.currentAttempt.duration_seconds || 5.0, 1.0);
@@ -317,6 +327,43 @@ async function onAttemptChange() {
   syncCanvasSizes();
 }
 
+function clearAttemptData() {
+  state.currentAttempt = null;
+  state.currentAssessment = null;
+  state.traineeLandmarks = [];
+  state.traineeFeatures = null;
+  state.warpingPath = [];
+  state.currentTime = 0;
+  state.duration = 5.0;
+
+  if (state.isPlaying) togglePlayPause();
+  clearVideo(dom.traineeVideo, dom.traineePlaceholder, 'No Trainee Attempt Available');
+  dom.coverageVal.textContent = '--';
+  dom.currentTimeDisplay.textContent = formatTime(0);
+  dom.totalTimeDisplay.textContent = formatTime(state.duration);
+  dom.masterScrubber.value = 0;
+  dom.masterScrubber.max = Math.floor(state.duration * 30);
+
+  dom.overallScoreNumber.textContent = '--';
+  dom.gaugeFill.style.strokeDashoffset = 314.16;
+  dom.interpretationBandPill.textContent = 'No Attempt';
+  dom.interpretationBandPill.className = 'band-pill';
+  dom.reliabilityPill.textContent = '--';
+  dom.reliabilityPill.className = 'reliability-pill';
+  dom.criticalAlert.classList.add('hidden');
+  dom.componentsList.innerHTML = '';
+  dom.feedbackCountBadge.textContent = '0 tips';
+  dom.feedbackList.innerHTML = '<div style="font-size: 0.75rem; color: var(--text-muted); padding: 8px;">Select a trainee attempt to view coaching feedback.</div>';
+}
+
+function clearVideo(video, placeholder, message) {
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+  placeholder.classList.remove('hidden');
+  placeholder.textContent = message;
+}
+
 function setupVideoSources() {
   if (state.currentAttempt && state.currentAttempt.video_path) {
     const filename = state.currentAttempt.video_path.split('/').pop();
@@ -330,6 +377,14 @@ function setupVideoSources() {
 }
 
 async function loadExpertSessionData() {
+  state.referenceEnvelope = null;
+  state.expertLandmarks = [];
+  clearVideo(
+    dom.expertVideo,
+    dom.expertPlaceholder,
+    'No Recorded Expert Reference Available',
+  );
+
   if (!state.currentReference) return;
   try {
     const refData = await fetch(`/api/references/${state.currentReference.reference_id}`).then(r => r.json());
@@ -375,7 +430,9 @@ async function loadFeatures(sessionId) {
 
 async function loadAssessment(attemptSessionId, referenceId) {
   try {
-    const assessments = await fetch(`/api/assessments?attempt_session_id=${attemptSessionId}`).then(r => r.json());
+    const query = new URLSearchParams({ attempt_session_id: attemptSessionId });
+    if (referenceId) query.set('reference_id', referenceId);
+    const assessments = await fetch(`/api/assessments?${query}`).then(r => r.json());
     if (assessments && assessments.length > 0) {
       state.currentAssessment = assessments[0];
       renderScorecard(state.currentAssessment);
