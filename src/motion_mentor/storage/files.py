@@ -146,3 +146,22 @@ def load_session_json(
     session = Session.model_validate(data["session"])
     records = [LandmarkFrameRecord.model_validate(f) for f in data["frames"]]
     return session, records
+
+
+def save_features_parquet(
+    df_features: pd.DataFrame,
+    output_path: str | Path,
+) -> None:
+    """Save derived feature DataFrame to a Parquet file."""
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df_features.to_parquet(output_path, compression="snappy", index=False)
+
+
+def load_features_parquet(file_path: str | Path) -> pd.DataFrame:
+    """Load derived features DataFrame from a Parquet file."""
+    file_path = Path(file_path)
+    if not file_path.exists():
+        raise FileNotFoundError(f"Feature file not found: {file_path}")
+    return pd.read_parquet(file_path)
+

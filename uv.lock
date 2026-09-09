@@ -412,6 +412,7 @@ name = "motion-mentor"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "matplotlib" },
     { name = "mediapipe" },
     { name = "numpy" },
     { name = "opencv-python" },
@@ -431,6 +432,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "matplotlib", specifier = ">=3.8.0" },
     { name = "mediapipe", specifier = ">=0.10.20,<=0.10.21" },
     { name = "numpy", specifier = ">=1.24.0" },
     { name = "opencv-python", specifier = ">=4.8.0" },

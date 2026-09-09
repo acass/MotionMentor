@@ -382,6 +382,80 @@ def cmd_export(args: argparse.Namespace) -> None:
     console.print(f"[bold green]Exported session to {out_path}[/bold green]")
 
 
+def cmd_process(args: argparse.Namespace) -> None:
+    """Preprocess session landmarks (smooth, interpolate, normalize) and extract features."""
+    from motion_mentor.processing.smoothing import smooth_landmark_records
+    from motion_mentor.processing.normalization import normalize_session_records
+    from motion_mentor.processing.features import extract_session_features_df
+    from motion_mentor.storage.files import save_features_parquet, save_landmarks_parquet
+
+    app = MotionMentorApp(args.config)
+    session = app.db.get_session(args.session)
+    if not session or not session.landmark_path:
+        console.print(f"[bold red]Session {args.session} not found in database.[/bold red]")
+        sys.exit(1)
+
+    raw_records = load_landmarks_parquet(session.landmark_path)
+    console.print(f"[bold cyan]Processing Session {session.session_id} ({len(raw_records)} frames)...[/bold cyan]")
+
+    # 1. Smooth & Interpolate
+    smoothed = smooth_landmark_records(
+        raw_records,
+        min_cutoff=args.min_cutoff,
+        beta=args.beta,
+        interpolate_gaps=not args.no_interp,
+        max_gap_ms=args.max_gap_ms,
+    )
+
+    # 2. Coordinate Normalization
+    normalized, global_wrist = normalize_session_records(
+        smoothed,
+        mirror_left_hand=args.mirror,
+    )
+
+    # 3. Extract Features
+    df_features = extract_session_features_df(normalized, global_trajectory=global_wrist)
+
+    # 4. Save
+    norm_path = Path(f"data/landmarks/{session.session_id}_normalized.parquet")
+    feat_path = Path(f"data/features/{session.session_id}_features.parquet")
+    save_landmarks_parquet(normalized, norm_path)
+    save_features_parquet(df_features, feat_path)
+
+    console.print(f"[bold green]Session processed successfully![/bold green]")
+    console.print(f"Normalized landmarks: [yellow]{norm_path}[/yellow]")
+    console.print(f"Features saved to: [yellow]{feat_path}[/yellow]")
+    console.print(f"Feature matrix shape: [bold]{df_features.shape[0]} frames x {df_features.shape[1]} features[/bold]")
+
+
+def cmd_plot_features_cli(args: argparse.Namespace) -> None:
+    """Plot extracted motion features."""
+    from scripts.plot_features import plot_session_features
+    from motion_mentor.processing.features import extract_session_features_df
+    from motion_mentor.processing.normalization import normalize_session_records
+    from motion_mentor.processing.smoothing import smooth_landmark_records
+
+    app = MotionMentorApp(args.config)
+    session = app.db.get_session(args.session)
+    if not session or not session.landmark_path:
+        console.print(f"[bold red]Session {args.session} not found in database.[/bold red]")
+        sys.exit(1)
+
+    records = load_landmarks_parquet(session.landmark_path)
+    if not args.no_smooth:
+        records = smooth_landmark_records(records)
+    records, global_wrist = normalize_session_records(records)
+
+    df_features = extract_session_features_df(records, global_trajectory=global_wrist)
+    out_png = args.output or f"data/features/{session.session_id}_features.png"
+    plot_session_features(
+        df_features,
+        session_id=session.session_id,
+        output_png=out_png,
+        show_plot=not args.headless,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="motion-mentor",
@@ -431,6 +505,22 @@ def main() -> None:
     p_exp.add_argument("--session", required=True)
     p_exp.add_argument("--output", default=None)
 
+    # process
+    p_proc = subparsers.add_parser("process", help="Smooth, normalize, and extract features from a session")
+    p_proc.add_argument("--session", required=True, help="Session UUID")
+    p_proc.add_argument("--min-cutoff", type=float, default=1.0)
+    p_proc.add_argument("--beta", type=float, default=0.007)
+    p_proc.add_argument("--no-interp", action="store_true")
+    p_proc.add_argument("--max-gap-ms", type=float, default=150.0)
+    p_proc.add_argument("--mirror", action="store_true")
+
+    # plot-features
+    p_plot = subparsers.add_parser("plot-features", help="Plot extracted session features")
+    p_plot.add_argument("--session", required=True)
+    p_plot.add_argument("--output", default=None)
+    p_plot.add_argument("--headless", action="store_true")
+    p_plot.add_argument("--no-smooth", action="store_true")
+
     args = parser.parse_args()
 
     commands = {
@@ -439,11 +529,14 @@ def main() -> None:
         "replay": cmd_replay,
         "list-sessions": cmd_list_sessions,
         "export": cmd_export,
+        "process": cmd_process,
+        "plot-features": cmd_plot_features_cli,
     }
 
     cmd_fn = commands.get(args.command)
     if cmd_fn:
         cmd_fn(args)
+
 
 
 if __name__ == "__main__":
