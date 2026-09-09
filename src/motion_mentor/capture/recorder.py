@@ -62,7 +62,8 @@ class SessionRecorder:
         self.video_output_path.parent.mkdir(parents=True, exist_ok=True)
         self.landmark_output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        # Try browser-native H.264 (avc1) first, fallback to mp4v
+        fourcc = cv2.VideoWriter_fourcc(*"avc1")
         self.video_writer = cv2.VideoWriter(
             str(self.video_output_path),
             fourcc,
@@ -71,8 +72,8 @@ class SessionRecorder:
         )
 
         if not self.video_writer.isOpened():
-            # Fallback to alternate fourcc if mp4v is unsupported
-            fourcc = cv2.VideoWriter_fourcc(*"avc1")
+            # Fallback to alternate fourcc if avc1 is unsupported
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
             self.video_writer = cv2.VideoWriter(
                 str(self.video_output_path),
                 fourcc,
@@ -133,6 +134,26 @@ class SessionRecorder:
 
         # Save Parquet landmarks
         save_landmarks_parquet(self.frame_records, self.landmark_output_path)
+
+        # Ensure web-browser compatibility (H.264 + faststart) if ffmpeg is available
+        if self.video_output_path.exists() and self.video_output_path.stat().st_size > 0:
+            try:
+                import shutil
+                import subprocess
+                if shutil.which("ffmpeg"):
+                    temp_mp4 = self.video_output_path.with_suffix(".tmp.mp4")
+                    cmd = [
+                        "ffmpeg", "-y", "-loglevel", "error",
+                        "-i", str(self.video_output_path),
+                        "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                        "-movflags", "+faststart",
+                        str(temp_mp4),
+                    ]
+                    res = subprocess.run(cmd, capture_output=True, timeout=15)
+                    if res.returncode == 0 and temp_mp4.exists() and temp_mp4.stat().st_size > 0:
+                        temp_mp4.replace(self.video_output_path)
+            except Exception as e:
+                logger.warning("Optional ffmpeg web-transcode skipped: %s", e)
 
         # Duration calculation
         duration_sec = 0.0

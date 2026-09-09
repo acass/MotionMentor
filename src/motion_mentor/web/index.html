@@ -44,6 +44,11 @@
         <select id="referenceSelect" class="styled-select"></select>
       </div>
 
+      <button id="btnOpenRecordModal" class="btn btn-record" title="Open camera to record a new attempt">
+        <span class="rec-dot"></span>
+        Record Take
+      </button>
+
       <button id="btnRecompare" class="btn btn-outline" title="Re-run DTW comparison">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
@@ -288,6 +293,73 @@
             <!-- Dynamically populated -->
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Camera & Recording Modal -->
+  <div class="modal-overlay hidden" id="recordModal">
+    <div class="modal-content record-modal-content glass-panel">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 class="modal-title">📹 Live Camera & Take Recorder</h3>
+          <p class="modal-subtitle">Align your hand with the guide. Click "Start 5s Recording" to capture your coached attempt.</p>
+        </div>
+        <button id="btnCloseRecordModal" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body record-modal-body">
+        <!-- Live Camera Viewport -->
+        <div class="live-camera-viewport" id="liveCameraViewport">
+          <video id="liveCameraVideo" playsinline autoplay muted></video>
+          
+          <!-- Alignment Outline Guide -->
+          <div class="camera-hand-guide">
+            <svg viewBox="0 0 200 240" class="guide-hand-svg">
+              <path d="M 60 230 L 60 170 L 25 135 C 20 130 25 120 32 120 C 37 120 42 123 46 128 L 70 152 L 70 65 C 70 55 85 55 85 65 L 85 140 L 95 50 C 95 40 110 40 110 50 L 110 140 L 120 60 C 120 50 135 50 135 60 L 135 145 L 145 90 C 145 80 160 80 160 90 L 160 170 C 160 210 140 230 110 230 Z" fill="none" stroke="rgba(0, 240, 255, 0.45)" stroke-width="2.2" stroke-dasharray="8,5"/>
+            </svg>
+            <span class="guide-caption">Position Hand Inside Frame</span>
+          </div>
+
+          <!-- Camera Live Indicator Badge -->
+          <div class="live-status-pill" id="liveCamStatus">
+            <span class="status-dot cyan-dot"></span> Camera Ready (30 FPS)
+          </div>
+
+          <!-- 3-2-1 Countdown Overlay -->
+          <div class="countdown-overlay hidden" id="countdownOverlay">
+            <div class="countdown-number" id="countdownNumber">3</div>
+            <div class="countdown-sub" id="countdownSub">Get Ready!</div>
+          </div>
+
+          <!-- Active Recording Banner -->
+          <div class="rec-banner hidden" id="recBanner">
+            <span class="pulse-rec-indicator"></span> RECORDING: <span id="recCountdownTimer">5.0</span>s
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="record-progress-container">
+          <div class="record-progress-bar" id="recordProgressBar" style="width: 0%;"></div>
+        </div>
+
+        <!-- Feedback & Processing Status -->
+        <div class="record-msg-area" id="recordMsgArea">
+          Ready to record. Click "Start 5s Recording" or run a synthetic test take.
+        </div>
+
+        <!-- Controls -->
+        <div class="record-controls-row">
+          <button id="btnStartLiveRecord" class="btn btn-record-action">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="12" r="8"/>
+            </svg>
+            Start 5s Recording
+          </button>
+
+          <button id="btnSyntheticRecord" class="btn btn-outline" title="Simulate an attempt using synthetic kinematics">
+            ⚡ Quick Synthetic Take
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -93,6 +93,30 @@ const dom = {
   feedbackCountBadge: document.getElementById('feedbackCountBadge'),
   featureChartSelect: document.getElementById('featureChartSelect'),
   timelineChartCanvas: document.getElementById('timelineChartCanvas'),
+
+  // Live Camera & Record Modal
+  btnOpenRecordModal: document.getElementById('btnOpenRecordModal'),
+  recordModal: document.getElementById('recordModal'),
+  btnCloseRecordModal: document.getElementById('btnCloseRecordModal'),
+  liveCameraVideo: document.getElementById('liveCameraVideo'),
+  liveCamStatus: document.getElementById('liveCamStatus'),
+  countdownOverlay: document.getElementById('countdownOverlay'),
+  countdownNumber: document.getElementById('countdownNumber'),
+  countdownSub: document.getElementById('countdownSub'),
+  recBanner: document.getElementById('recBanner'),
+  recCountdownTimer: document.getElementById('recCountdownTimer'),
+  recordProgressBar: document.getElementById('recordProgressBar'),
+  recordMsgArea: document.getElementById('recordMsgArea'),
+  btnStartLiveRecord: document.getElementById('btnStartLiveRecord'),
+  btnSyntheticRecord: document.getElementById('btnSyntheticRecord'),
+};
+
+// Recording State
+const recordState = {
+  liveStream: null,
+  mediaRecorder: null,
+  recordedChunks: [],
+  isRecording: false,
 };
 
 // Initialization
@@ -131,6 +155,20 @@ function initEventListeners() {
   // History Modal
   dom.btnToggleHistory.addEventListener('click', () => dom.historyModal.classList.remove('hidden'));
   dom.btnCloseHistory.addEventListener('click', () => dom.historyModal.classList.add('hidden'));
+
+  // Live Camera & Record Modal
+  if (dom.btnOpenRecordModal) {
+    dom.btnOpenRecordModal.addEventListener('click', openRecordModal);
+  }
+  if (dom.btnCloseRecordModal) {
+    dom.btnCloseRecordModal.addEventListener('click', closeRecordModal);
+  }
+  if (dom.btnStartLiveRecord) {
+    dom.btnStartLiveRecord.addEventListener('click', startLiveRecording);
+  }
+  if (dom.btnSyntheticRecord) {
+    dom.btnSyntheticRecord.addEventListener('click', startSyntheticRecording);
+  }
 
   // Feature Timeline Select
   dom.featureChartSelect.addEventListener('change', drawFeatureChart);
@@ -816,3 +854,204 @@ function formatTime(seconds) {
   const ms = Math.floor((seconds % 1) * 10);
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${ms}`;
 }
+
+// ==========================================================================
+// Live Camera & Recording Functions
+// ==========================================================================
+
+async function openRecordModal() {
+  if (!dom.recordModal) return;
+  dom.recordModal.classList.remove('hidden');
+  dom.recordProgressBar.style.width = '0%';
+  dom.countdownOverlay.classList.add('hidden');
+  dom.recBanner.classList.add('hidden');
+  dom.btnStartLiveRecord.disabled = true;
+  dom.btnSyntheticRecord.disabled = false;
+  dom.recordMsgArea.textContent = 'Requesting camera access from browser...';
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: 'user',
+      },
+      audio: false,
+    });
+    recordState.liveStream = stream;
+    dom.liveCameraVideo.srcObject = stream;
+    dom.liveCamStatus.innerHTML = '<span class="status-dot green-dot"></span> Camera Active (30 FPS)';
+    dom.recordMsgArea.textContent = 'Position your hand inside the guide, then click "Start 5s Recording".';
+    dom.btnStartLiveRecord.disabled = false;
+  } catch (err) {
+    console.warn('Camera access denied or unavailable:', err);
+    dom.liveCamStatus.innerHTML = '<span class="status-dot coral-dot"></span> Camera Inactive';
+    dom.recordMsgArea.textContent = 'Camera permission was not granted or no webcam was found. You can allow permissions in your browser or click "Quick Synthetic Take".';
+    dom.btnStartLiveRecord.disabled = true;
+  }
+}
+
+function closeRecordModal() {
+  if (!dom.recordModal) return;
+  dom.recordModal.classList.add('hidden');
+  if (recordState.liveStream) {
+    recordState.liveStream.getTracks().forEach(t => t.stop());
+    recordState.liveStream = null;
+  }
+  recordState.isRecording = false;
+  dom.countdownOverlay.classList.add('hidden');
+  dom.recBanner.classList.add('hidden');
+}
+
+async function startLiveRecording() {
+  if (!recordState.liveStream || recordState.isRecording) return;
+
+  dom.btnStartLiveRecord.disabled = true;
+  dom.btnSyntheticRecord.disabled = true;
+  recordState.isRecording = true;
+
+  // 3-Second Countdown
+  dom.countdownOverlay.classList.remove('hidden');
+  for (let count = 3; count >= 1; count--) {
+    dom.countdownNumber.textContent = count;
+    dom.countdownSub.textContent = count === 1 ? 'Ready...' : 'Get Ready!';
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  dom.countdownOverlay.classList.add('hidden');
+
+  // Start MediaRecorder
+  recordState.recordedChunks = [];
+  let mimeType = 'video/webm';
+  if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+    mimeType = 'video/webm;codecs=vp9';
+  } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+    mimeType = 'video/mp4';
+  }
+
+  try {
+    recordState.mediaRecorder = new MediaRecorder(recordState.liveStream, { mimeType });
+  } catch (e) {
+    recordState.mediaRecorder = new MediaRecorder(recordState.liveStream);
+    mimeType = recordState.mediaRecorder.mimeType || 'video/webm';
+  }
+
+  recordState.mediaRecorder.ondataavailable = (e) => {
+    if (e.data && e.data.size > 0) {
+      recordState.recordedChunks.push(e.data);
+    }
+  };
+
+  recordState.mediaRecorder.start(100);
+
+  // Active Recording Timer & Progress Bar (5.0s)
+  dom.recBanner.classList.remove('hidden');
+  const recordDuration = 5.0;
+  const startTime = performance.now();
+
+  const timerInterval = setInterval(() => {
+    const elapsed = (performance.now() - startTime) / 1000.0;
+    const remaining = Math.max(0.0, recordDuration - elapsed);
+    dom.recCountdownTimer.textContent = remaining.toFixed(1);
+    const pct = Math.min(100, (elapsed / recordDuration) * 100);
+    dom.recordProgressBar.style.width = `${pct}%`;
+
+    if (elapsed >= recordDuration) {
+      clearInterval(timerInterval);
+    }
+  }, 50);
+
+  await new Promise(r => setTimeout(r, recordDuration * 1000));
+  clearInterval(timerInterval);
+
+  dom.recBanner.classList.add('hidden');
+  dom.recordMsgArea.innerHTML = '<span class="status-dot cyan-dot"></span> Processing video with MediaPipe 3D Hand Landmarker & DTW...';
+
+  recordState.mediaRecorder.onstop = async () => {
+    const blob = new Blob(recordState.recordedChunks, { type: mimeType });
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Data = reader.result;
+      try {
+        const actId = state.currentActivity ? state.currentActivity.activity_id : 'reach-and-pinch-001';
+        const res = await fetch('/api/record_upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            video_base64: base64Data,
+            mime_type: mimeType,
+            activity_id: actId,
+            role: 'trainee',
+            participant_id: 'browser-user',
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || 'Capture processing failed');
+        }
+
+        closeRecordModal();
+
+        // Refresh sessions list
+        state.sessions = await fetch('/api/sessions').then(r => r.json());
+        populateAttemptDropdown();
+        dom.attemptSelect.value = data.session.session_id;
+        await onAttemptChange();
+
+        const scoreMsg = data.assessment?.overall_score
+          ? `Score: ${data.assessment.overall_score.toFixed(1)} / 100 (${data.assessment.interpretation_band})`
+          : 'Processing complete';
+        dom.criticalAlert.classList.remove('hidden');
+        dom.criticalText.textContent = `✅ New Attempt Captured! ${scoreMsg}. Review synchronized ghost overlay below.`;
+      } catch (err) {
+        console.error('Record upload error:', err);
+        dom.recordMsgArea.textContent = `Upload failed: ${err.message}`;
+        dom.btnStartLiveRecord.disabled = false;
+        dom.btnSyntheticRecord.disabled = false;
+        recordState.isRecording = false;
+      }
+    };
+    reader.readAsDataURL(blob);
+  };
+
+  recordState.mediaRecorder.stop();
+}
+
+async function startSyntheticRecording() {
+  dom.btnStartLiveRecord.disabled = true;
+  dom.btnSyntheticRecord.disabled = true;
+  dom.recordMsgArea.innerHTML = '<span class="status-dot cyan-dot"></span> Generating synthetic kinematics attempt...';
+
+  try {
+    const actId = state.currentActivity ? state.currentActivity.activity_id : 'reach-and-pinch-001';
+    const res = await fetch('/api/record_synthetic', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        activity_id: actId,
+        duration: 5.0,
+        role: 'trainee',
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Synthetic take failed');
+
+    closeRecordModal();
+
+    // Reload sessions and select the synthetic attempt
+    state.sessions = await fetch('/api/sessions').then(r => r.json());
+    populateAttemptDropdown();
+    dom.attemptSelect.value = data.session.session_id;
+    await onAttemptChange();
+
+    dom.criticalAlert.classList.remove('hidden');
+    dom.criticalText.textContent = `✅ Synthetic Attempt Loaded! Ready for playback review.`;
+  } catch (err) {
+    console.error('Synthetic take failed:', err);
+    dom.recordMsgArea.textContent = `Synthetic generation failed: ${err.message}`;
+    dom.btnStartLiveRecord.disabled = false;
+    dom.btnSyntheticRecord.disabled = false;
+  }
+}
+

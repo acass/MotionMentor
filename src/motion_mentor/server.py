@@ -205,6 +205,226 @@ def compare_attempt(req: CompareRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Comparison failed: {e}")
 
 
+class RecordUploadRequest(BaseModel):
+    video_base64: str
+    mime_type: Optional[str] = "video/webm"
+    activity_id: Optional[str] = "reach-and-pinch-001"
+    role: Optional[str] = "trainee"
+    participant_id: Optional[str] = "local-user"
+
+
+class SyntheticRecordRequest(BaseModel):
+    activity_id: Optional[str] = "reach-and-pinch-001"
+    duration: Optional[float] = 5.0
+    role: Optional[str] = "trainee"
+    participant_id: Optional[str] = "local-user"
+
+
+@app.post("/api/record_upload")
+def record_upload(req: RecordUploadRequest) -> Dict[str, Any]:
+    """Process a video recorded directly in the web browser."""
+    import base64
+    import shutil
+    import subprocess
+    import tempfile
+    import cv2
+    from motion_mentor.storage.models import generate_uuid, LandmarkFrameRecord, utc_now
+    from motion_mentor.storage.files import save_landmarks_parquet
+
+    mentor = get_mentor_app()
+    session_id = generate_uuid()
+
+    # Decode base64 payload
+    try:
+        # Strip data URL prefix if present
+        data_str = req.video_base64
+        if "," in data_str:
+            data_str = data_str.split(",", 1)[1]
+        video_bytes = base64.b64decode(data_str)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid base64 video payload: {e}")
+
+    temp_dir = Path(tempfile.gettempdir())
+    raw_tmp = temp_dir / f"{session_id}_upload.raw"
+    raw_tmp.write_bytes(video_bytes)
+
+    rec_dir = Path("data/recordings")
+    rec_dir.mkdir(parents=True, exist_ok=True)
+    mp4_path = rec_dir / f"{session_id}.mp4"
+
+    # Convert to browser H.264 MP4 with ffmpeg if available
+    if shutil.which("ffmpeg"):
+        cmd = [
+            "ffmpeg", "-y", "-loglevel", "error",
+            "-i", str(raw_tmp),
+            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
+            str(mp4_path),
+        ]
+        res = subprocess.run(cmd, capture_output=True)
+        if res.returncode != 0:
+            logger.warning("ffmpeg conversion failed: %s, falling back", res.stderr)
+            shutil.copyfile(str(raw_tmp), str(mp4_path))
+        raw_tmp.unlink(missing_ok=True)
+    else:
+        shutil.move(str(raw_tmp), str(mp4_path))
+
+    cap = cv2.VideoCapture(str(mp4_path))
+    if not cap.isOpened():
+        raise HTTPException(status_code=400, detail="Could not decode video file")
+
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    if fps <= 0 or fps > 120:
+        fps = 30.0
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 1280)
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 720)
+
+    records: List[LandmarkFrameRecord] = []
+    latencies: List[float] = []
+    frame_idx = 0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            break
+        ts_ms = frame_idx * (1000.0 / fps)
+        hands, latency_ms = mentor.tracker.process_frame(frame, ts_ms)
+        latencies.append(latency_ms)
+        records.append(
+            LandmarkFrameRecord(
+                session_id=session_id,
+                frame_index=frame_idx,
+                timestamp_ms=ts_ms,
+                hands=hands,
+                valid=len(hands) > 0,
+            )
+        )
+        frame_idx += 1
+    cap.release()
+
+    if not records:
+        raise HTTPException(status_code=400, detail="Video contained 0 readable frames")
+
+    # Save landmarks
+    lm_dir = Path("data/landmarks")
+    lm_dir.mkdir(parents=True, exist_ok=True)
+    lm_path = lm_dir / f"{session_id}.parquet"
+    save_landmarks_parquet(records, lm_path)
+
+    summary = mentor.quality_evaluator.evaluate(
+        records=records,
+        latencies_ms=latencies,
+        dropped_frames=0,
+    )
+
+    activity = mentor.db.get_activity(req.activity_id or "reach-and-pinch-001")
+    act_name = activity.name if activity else "reach_and_pinch"
+    act_version = activity.version if activity else 1
+    duration_sec = round(len(records) / fps, 2)
+
+    session = Session(
+        session_id=session_id,
+        activity_id=req.activity_id or "reach-and-pinch-001",
+        activity_name=act_name,
+        activity_version=act_version,
+        role=req.role or "trainee",
+        participant_id=req.participant_id or "local-user",
+        camera_id="browser-webcam",
+        resolution=[width, height],
+        nominal_fps=round(fps, 1),
+        model_version="hand_landmarker.task",
+        started_at=utc_now(),
+        ended_at=utc_now(),
+        duration_seconds=duration_sec,
+        total_frames=len(records),
+        video_path=str(mp4_path),
+        landmark_path=str(lm_path),
+        quality_summary=summary,
+    )
+    mentor.db.save_session(session)
+
+    # Auto-evaluate against reference
+    assessment_data = None
+    ref = mentor.db.get_latest_reference_profile(session.activity_id)
+    if ref:
+        from scripts.compare_sessions import prepare_session_features, compare_attempt_to_reference
+        try:
+            prepare_session_features(mentor, session)
+            assessment = compare_attempt_to_reference(mentor, session, ref.reference_id)
+            assessment_data = assessment.model_dump()
+        except Exception as e:
+            logger.warning("Auto-evaluation failed: %s", e)
+
+    return {
+        "session": session.model_dump(),
+        "assessment": assessment_data,
+    }
+
+
+@app.post("/api/record_synthetic")
+def record_synthetic(req: SyntheticRecordRequest) -> Dict[str, Any]:
+    """Generate a quick synthetic trainee attempt for testing without webcam hardware."""
+    from motion_mentor.capture.camera import SyntheticCamera
+    from motion_mentor.capture.recorder import SessionRecorder
+    from motion_mentor.storage.models import generate_uuid
+
+    mentor = get_mentor_app()
+    activity = mentor.load_or_create_activity("reach_and_pinch")
+    session_id = generate_uuid()
+
+    video_out = Path(f"data/recordings/{session_id}.mp4")
+    landmarks_out = Path(f"data/landmarks/{session_id}.parquet")
+
+    duration = req.duration or 5.0
+    camera = SyntheticCamera(width=1280, height=720, target_fps=30, total_seconds=duration)
+    recorder = SessionRecorder(
+        session_id=session_id,
+        activity=activity,
+        role=req.role or "trainee",
+        participant_id=req.participant_id or "synthetic-user",
+        camera_id="synthetic",
+        width=1280,
+        height=720,
+        fps=30.0,
+        video_output_path=video_out,
+        landmark_output_path=landmarks_out,
+    )
+
+    recorder.start()
+    latencies = []
+    while True:
+        ret, frame, ts_ms = camera.read()
+        if not ret or frame is None:
+            break
+        hands, latency_ms = mentor.tracker.process_frame(frame, ts_ms)
+        latencies.append(latency_ms)
+        recorder.record_frame(frame, ts_ms, hands)
+
+    summary = mentor.quality_evaluator.evaluate(
+        records=recorder.frame_records,
+        latencies_ms=latencies,
+        dropped_frames=0,
+    )
+    session, _ = recorder.finish(quality_summary=summary)
+    mentor.db.save_session(session)
+
+    assessment_data = None
+    ref = mentor.db.get_latest_reference_profile(activity.activity_id)
+    if ref:
+        from scripts.compare_sessions import prepare_session_features, compare_attempt_to_reference
+        try:
+            prepare_session_features(mentor, session)
+            assessment = compare_attempt_to_reference(mentor, session, ref.reference_id)
+            assessment_data = assessment.model_dump()
+        except Exception as e:
+            logger.warning("Auto-evaluation failed: %s", e)
+
+    return {
+        "session": session.model_dump(),
+        "assessment": assessment_data,
+    }
+
+
 @app.get("/api/videos/{video_filename}")
 def stream_video(video_filename: str) -> FileResponse:
     """Stream recorded MP4 video with HTTP 206 Partial Content range support."""
