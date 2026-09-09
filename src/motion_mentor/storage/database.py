@@ -7,7 +7,15 @@ import sqlite3
 from pathlib import Path
 from typing import List, Optional
 
-from motion_mentor.storage.models import Activity, QualitySummary, Session
+from motion_mentor.storage.models import (
+    Activity,
+    AssessmentResult,
+    ComponentScores,
+    FeedbackItem,
+    QualitySummary,
+    ReferenceProfile,
+    Session,
+)
 
 
 class DatabaseManager:
@@ -65,6 +73,44 @@ class DatabaseManager:
                     landmark_path TEXT,
                     quality_summary_json TEXT,
                     FOREIGN KEY (activity_id) REFERENCES activities (activity_id)
+                );
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS reference_profiles (
+                    reference_id TEXT PRIMARY KEY,
+                    activity_id TEXT NOT NULL,
+                    activity_name TEXT NOT NULL,
+                    activity_version INTEGER NOT NULL,
+                    version INTEGER NOT NULL,
+                    expert_session_ids_json TEXT NOT NULL,
+                    medoid_session_id TEXT NOT NULL,
+                    total_demonstrations INTEGER NOT NULL,
+                    duration_mean_sec REAL NOT NULL,
+                    profile_path TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (activity_id) REFERENCES activities (activity_id)
+                );
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS assessment_results (
+                    assessment_id TEXT PRIMARY KEY,
+                    attempt_session_id TEXT NOT NULL,
+                    reference_profile_id TEXT NOT NULL,
+                    activity_name TEXT NOT NULL,
+                    scoring_version TEXT NOT NULL,
+                    overall_score REAL NOT NULL,
+                    reliability TEXT NOT NULL,
+                    interpretation_band TEXT NOT NULL,
+                    component_scores_json TEXT NOT NULL,
+                    critical_failures_json TEXT NOT NULL,
+                    feedback_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (attempt_session_id) REFERENCES sessions (session_id),
+                    FOREIGN KEY (reference_profile_id) REFERENCES reference_profiles (reference_id)
                 );
                 """
             )
@@ -250,3 +296,152 @@ class DatabaseManager:
             landmark_path=row["landmark_path"],
             quality_summary=quality,
         )
+
+    # Reference Profiles CRUD
+    def save_reference_profile(self, profile: ReferenceProfile) -> None:
+        """Insert or replace an expert reference profile."""
+        with self.get_connection() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO reference_profiles (
+                    reference_id, activity_id, activity_name, activity_version,
+                    version, expert_session_ids_json, medoid_session_id,
+                    total_demonstrations, duration_mean_sec, profile_path, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    profile.reference_id,
+                    profile.activity_id,
+                    profile.activity_name,
+                    profile.activity_version,
+                    profile.version,
+                    json.dumps(profile.expert_session_ids),
+                    profile.medoid_session_id,
+                    profile.total_demonstrations,
+                    profile.duration_mean_sec,
+                    profile.profile_path,
+                    profile.created_at,
+                ),
+            )
+
+    def get_reference_profile(self, reference_id: str) -> Optional[ReferenceProfile]:
+        """Fetch reference profile by ID."""
+        with self.get_connection() as conn:
+            cursor = conn.execute(
+                "SELECT * FROM reference_profiles WHERE reference_id = ?;",
+                (reference_id,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return self._row_to_reference(row)
+
+    def get_latest_reference_profile(self, activity_id_or_name: str) -> Optional[ReferenceProfile]:
+        """Fetch newest reference profile for an activity."""
+        with self.get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT * FROM reference_profiles
+                WHERE activity_id = ? OR activity_name = ?
+                ORDER BY version DESC, created_at DESC LIMIT 1;
+                """,
+                (activity_id_or_name, activity_id_or_name),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return self._row_to_reference(row)
+
+    def list_reference_profiles(self) -> List[ReferenceProfile]:
+        """List all reference profiles."""
+        with self.get_connection() as conn:
+            cursor = conn.execute("SELECT * FROM reference_profiles ORDER BY created_at DESC;")
+            return [self._row_to_reference(r) for r in cursor.fetchall()]
+
+    def _row_to_reference(self, row: sqlite3.Row) -> ReferenceProfile:
+        return ReferenceProfile(
+            reference_id=row["reference_id"],
+            activity_id=row["activity_id"],
+            activity_name=row["activity_name"],
+            activity_version=row["activity_version"],
+            version=row["version"],
+            expert_session_ids=json.loads(row["expert_session_ids_json"]),
+            medoid_session_id=row["medoid_session_id"],
+            total_demonstrations=row["total_demonstrations"],
+            duration_mean_sec=row["duration_mean_sec"],
+            profile_path=row["profile_path"],
+            created_at=row["created_at"],
+        )
+
+    # Assessment Results CRUD
+    def save_assessment(self, assessment: AssessmentResult) -> None:
+        """Insert or replace an assessment result."""
+        with self.get_connection() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO assessment_results (
+                    assessment_id, attempt_session_id, reference_profile_id,
+                    activity_name, scoring_version, overall_score, reliability,
+                    interpretation_band, component_scores_json, critical_failures_json,
+                    feedback_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """,
+                (
+                    assessment.assessment_id,
+                    assessment.attempt_session_id,
+                    assessment.reference_profile_id,
+                    assessment.activity_name,
+                    assessment.scoring_version,
+                    assessment.overall_score,
+                    assessment.reliability,
+                    assessment.interpretation_band,
+                    assessment.component_scores.model_dump_json(),
+                    json.dumps(assessment.critical_failures),
+                    json.dumps([f.model_dump() for f in assessment.feedback]),
+                    assessment.created_at,
+                ),
+            )
+
+    def get_assessment(self, assessment_id: str) -> Optional[AssessmentResult]:
+        """Fetch assessment by ID."""
+        with self.get_connection() as conn:
+            cursor = conn.execute(
+                "SELECT * FROM assessment_results WHERE assessment_id = ?;",
+                (assessment_id,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return self._row_to_assessment(row)
+
+    def list_assessments(self, attempt_session_id: Optional[str] = None) -> List[AssessmentResult]:
+        """List assessments with optional session filter."""
+        query = "SELECT * FROM assessment_results"
+        params: List[str] = []
+        if attempt_session_id:
+            query += " WHERE attempt_session_id = ?"
+            params.append(attempt_session_id)
+        query += " ORDER BY created_at DESC;"
+
+        with self.get_connection() as conn:
+            cursor = conn.execute(query, tuple(params))
+            return [self._row_to_assessment(r) for r in cursor.fetchall()]
+
+    def _row_to_assessment(self, row: sqlite3.Row) -> AssessmentResult:
+        comp_scores = ComponentScores.model_validate_json(row["component_scores_json"])
+        feedback_list = [FeedbackItem.model_validate(f) for f in json.loads(row["feedback_json"])]
+        return AssessmentResult(
+            assessment_id=row["assessment_id"],
+            attempt_session_id=row["attempt_session_id"],
+            reference_profile_id=row["reference_profile_id"],
+            activity_name=row["activity_name"],
+            scoring_version=row["scoring_version"],
+            overall_score=row["overall_score"],
+            reliability=row["reliability"],  # type: ignore
+            interpretation_band=row["interpretation_band"],
+            component_scores=comp_scores,
+            critical_failures=json.loads(row["critical_failures_json"]),
+            feedback=feedback_list,
+            created_at=row["created_at"],
+        )
+

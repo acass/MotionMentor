@@ -408,13 +408,15 @@ def cmd_process(args: argparse.Namespace) -> None:
     )
 
     # 2. Coordinate Normalization
-    normalized, global_wrist = normalize_session_records(
+    normalized, global_wrist, global_orient = normalize_session_records(
         smoothed,
         mirror_left_hand=args.mirror,
     )
 
     # 3. Extract Features
-    df_features = extract_session_features_df(normalized, global_trajectory=global_wrist)
+    df_features = extract_session_features_df(
+        normalized, global_trajectory=global_wrist, global_orientations=global_orient
+    )
 
     # 4. Save
     norm_path = Path(f"data/landmarks/{session.session_id}_normalized.parquet")
@@ -444,9 +446,11 @@ def cmd_plot_features_cli(args: argparse.Namespace) -> None:
     records = load_landmarks_parquet(session.landmark_path)
     if not args.no_smooth:
         records = smooth_landmark_records(records)
-    records, global_wrist = normalize_session_records(records)
+    records, global_wrist, global_orient = normalize_session_records(records)
 
-    df_features = extract_session_features_df(records, global_trajectory=global_wrist)
+    df_features = extract_session_features_df(
+        records, global_trajectory=global_wrist, global_orientations=global_orient
+    )
     out_png = args.output or f"data/features/{session.session_id}_features.png"
     plot_session_features(
         df_features,
@@ -514,12 +518,143 @@ def main() -> None:
     p_proc.add_argument("--max-gap-ms", type=float, default=150.0)
     p_proc.add_argument("--mirror", action="store_true")
 
+def cmd_build_reference(args: argparse.Namespace) -> None:
+    """Build an expert reference profile combining one or more expert sessions."""
+    from motion_mentor.comparison.reference import ReferenceProfileBuilder
+    from scripts.compare_sessions import prepare_session_features
+
+    app = MotionMentorApp(args.config)
+    activity = app.load_or_create_activity(args.activity)
+
+    expert_sessions = []
+    if args.sessions:
+        for sid in args.sessions:
+            sess = app.db.get_session(sid)
+            if sess:
+                expert_sessions.append(sess)
+            else:
+                console.print(f"[yellow]Warning: Session {sid} not found in DB.[/yellow]")
+    else:
+        all_experts = app.db.list_sessions(activity_id=activity.activity_id, role="expert")
+        expert_sessions = [
+            s for s in all_experts
+            if s.quality_summary and s.quality_summary.meets_criteria
+        ]
+        skipped = len(all_experts) - len(expert_sessions)
+        if skipped > 0:
+            console.print(f"[yellow]Skipping {skipped} expert session(s) that did not meet quality criteria.[/yellow]")
+
+    if not expert_sessions:
+        console.print(f"[bold red]No quality-passing expert sessions found for activity: {activity.name}[/bold red]")
+        sys.exit(1)
+
+    console.print(f"[bold cyan]Building Reference Profile for '{activity.name}' using {len(expert_sessions)} expert session(s)...[/bold cyan]")
+
+    sessions_and_dfs = []
+    for s in expert_sessions:
+        df = prepare_session_features(app, s)
+        sessions_and_dfs.append((s, df))
+
+    builder = ReferenceProfileBuilder(activity)
+    profile, envelope_df = builder.build_profile(sessions_and_dfs)
+    app.db.save_reference_profile(profile)
+
+    console.print(f"\n[bold green]Expert Reference Profile Created![/bold green]")
+    console.print(f"Reference ID: [cyan]{profile.reference_id}[/cyan]")
+    console.print(f"Medoid Session: [yellow]{profile.medoid_session_id}[/yellow]")
+    console.print(f"Total Takes Combined: {profile.total_demonstrations}")
+    console.print(f"Mean Duration: {profile.duration_mean_sec}s")
+    console.print(f"Profile saved to: [yellow]{profile.profile_path}[/yellow]")
+
+
+def cmd_compare(args: argparse.Namespace) -> None:
+    """Compare a trainee attempt session against an expert reference."""
+    from scripts.compare_sessions import compare_attempt_to_reference, print_assessment_scorecard
+
+    app = MotionMentorApp(args.config)
+    attempt = app.db.get_session(args.attempt)
+    if not attempt:
+        console.print(f"[bold red]Attempt session {args.attempt} not found.[/bold red]")
+        sys.exit(1)
+
+    assessment = compare_attempt_to_reference(app, attempt, args.reference)
+    print_assessment_scorecard(assessment)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="motion-mentor",
+        description="MotionMentor - Explainable Hand Motion Skill Assessment System",
+    )
+    parser.add_argument("--config", default="configs/default.yaml", help="Path to config YAML")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # test-camera
+    p_test = subparsers.add_parser("test-camera", help="Test camera feed, skeleton tracking, and HUD")
+    p_test.add_argument("--camera-id", default=0, help="Camera device index (default: 0)")
+    p_test.add_argument("--synthetic", action="store_true", help="Use synthetic animated test pattern")
+    p_test.add_argument("--headless", action="store_true", help="Run without opening GUI preview window")
+    p_test.add_argument("--duration", type=float, default=None, help="Auto exit after N seconds")
+    p_test.add_argument("--width", type=int, default=1280)
+    p_test.add_argument("--height", type=int, default=720)
+    p_test.add_argument("--fps", type=int, default=30)
+
+    # record
+    p_rec = subparsers.add_parser("record", help="Record an expert or trainee session")
+    p_rec.add_argument("--activity", default="reach_and_pinch", help="Activity name or YAML path")
+    p_rec.add_argument("--role", choices=["expert", "trainee"], default="expert")
+    p_rec.add_argument("--participant", default="local-user", help="Participant identifier")
+    p_rec.add_argument("--countdown", type=int, default=3, help="Countdown seconds before recording")
+    p_rec.add_argument("--duration", type=float, default=None, help="Stop after N seconds")
+    p_rec.add_argument("--camera-id", default=0)
+    p_rec.add_argument("--synthetic", action="store_true")
+    p_rec.add_argument("--headless", action="store_true")
+    p_rec.add_argument("--width", type=int, default=1280)
+    p_rec.add_argument("--height", type=int, default=720)
+    p_rec.add_argument("--fps", type=int, default=30)
+
+    # replay
+    p_rep = subparsers.add_parser("replay", help="Replay a recorded session with landmark overlay")
+    p_rep.add_argument("--session", required=True, help="Session UUID")
+    p_rep.add_argument("--loop", action="store_true", help="Loop playback continuously")
+    p_rep.add_argument("--headless", action="store_true")
+    p_rep.add_argument("--duration", type=float, default=None)
+
+    # list-sessions
+    p_ls = subparsers.add_parser("list-sessions", help="List stored sessions")
+    p_ls.add_argument("--activity", default=None)
+    p_ls.add_argument("--role", default=None)
+
+    # export
+    p_exp = subparsers.add_parser("export", help="Export session and landmarks to JSON")
+    p_exp.add_argument("--session", required=True)
+    p_exp.add_argument("--output", default=None)
+
+    # process
+    p_proc = subparsers.add_parser("process", help="Smooth, normalize, and extract features from a session")
+    p_proc.add_argument("--session", required=True, help="Session UUID")
+    p_proc.add_argument("--min-cutoff", type=float, default=1.0)
+    p_proc.add_argument("--beta", type=float, default=0.007)
+    p_proc.add_argument("--no-interp", action="store_true")
+    p_proc.add_argument("--max-gap-ms", type=float, default=150.0)
+    p_proc.add_argument("--mirror", action="store_true")
+
     # plot-features
     p_plot = subparsers.add_parser("plot-features", help="Plot extracted session features")
     p_plot.add_argument("--session", required=True)
     p_plot.add_argument("--output", default=None)
     p_plot.add_argument("--headless", action="store_true")
     p_plot.add_argument("--no-smooth", action="store_true")
+
+    # build-reference
+    p_bld = subparsers.add_parser("build-reference", help="Build expert reference profile")
+    p_bld.add_argument("--activity", default="reach_and_pinch", help="Activity name")
+    p_bld.add_argument("--sessions", nargs="*", default=None, help="Optional specific expert session UUIDs")
+
+    # compare
+    p_cmp = subparsers.add_parser("compare", help="Compare trainee attempt with expert reference")
+    p_cmp.add_argument("--attempt", required=True, help="Trainee attempt session UUID")
+    p_cmp.add_argument("--reference", required=True, help="Reference profile UUID or expert session UUID")
 
     args = parser.parse_args()
 
@@ -531,6 +666,8 @@ def main() -> None:
         "export": cmd_export,
         "process": cmd_process,
         "plot-features": cmd_plot_features_cli,
+        "build-reference": cmd_build_reference,
+        "compare": cmd_compare,
     }
 
     cmd_fn = commands.get(args.command)
@@ -538,6 +675,6 @@ def main() -> None:
         cmd_fn(args)
 
 
-
 if __name__ == "__main__":
     main()
+

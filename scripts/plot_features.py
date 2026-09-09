@@ -115,9 +115,11 @@ def main() -> None:
     records = raw_records
     if args.smooth:
         records = smooth_landmark_records(records)
-    records, global_wrist = normalize_session_records(records)
+    records, global_wrist, global_orient = normalize_session_records(records)
 
-    df_features = extract_session_features_df(records, global_trajectory=global_wrist)
+    df_features = extract_session_features_df(
+        records, global_trajectory=global_wrist, global_orientations=global_orient
+    )
     plot_session_features(
         df_features,
         session_id=session.session_id,

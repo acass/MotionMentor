@@ -11,6 +11,8 @@ dist/
 # MotionMentor local data and recordings
 data/recordings/*.mp4
 data/landmarks/*.parquet
+data/features/*.parquet
+data/references/*.parquet
 data/*.db
 data/*_export.json
 models/*.task

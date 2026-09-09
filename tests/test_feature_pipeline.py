@@ -52,13 +52,15 @@ def test_full_processing_pipeline(tmp_path: Path) -> None:
     assert len(smoothed) == 30
 
     # 2. Normalize
-    normalized, global_wrist = normalize_session_records(smoothed)
+    normalized, global_wrist, global_orient = normalize_session_records(smoothed)
     assert len(normalized) == 30
     save_landmarks_parquet(normalized, norm_file)
     assert norm_file.exists()
 
     # 3. Extract Features
-    df_features = extract_session_features_df(normalized)
+    df_features = extract_session_features_df(
+        normalized, global_trajectory=global_wrist, global_orientations=global_orient
+    )
     assert not df_features.empty
     assert len(df_features) == 30
 

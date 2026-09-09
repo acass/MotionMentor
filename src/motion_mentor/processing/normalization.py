@@ -99,16 +99,40 @@ def extract_global_trajectory(
     return np.array(wrist_positions, dtype=np.float32)
 
 
+from motion_mentor.processing.features import compute_palm_orientation
+
+
+def extract_global_orientations(
+    records: List[LandmarkFrameRecord],
+) -> np.ndarray:
+    """
+    Extract global palm orientation [normal_x, normal_y, normal_z, pitch, roll, yaw]
+    across all frames prior to canonical rotation.
+    Returns:
+        (N, 6) array
+    """
+    orientations: List[List[float]] = []
+    for rec in records:
+        if rec.hands and rec.valid and len(rec.hands[0].landmarks_image) >= 21:
+            pts = np.array(rec.hands[0].landmarks_image, dtype=np.float64)
+            normal, pitch, roll, yaw = compute_palm_orientation(pts)
+            orientations.append([float(normal[0]), float(normal[1]), float(normal[2]), pitch, roll, yaw])
+        else:
+            orientations.append([0.0, 0.0, 1.0, 0.0, 0.0, 0.0])
+    return np.array(orientations, dtype=np.float32)
+
+
 def normalize_session_records(
     records: List[LandmarkFrameRecord],
     mirror_left_hand: bool = False,
-) -> Tuple[List[LandmarkFrameRecord], np.ndarray]:
+) -> Tuple[List[LandmarkFrameRecord], np.ndarray, np.ndarray]:
     """
     Normalize an entire landmark sequence:
     Returns:
-        (normalized_records, global_wrist_trajectory)
+        (normalized_records, global_wrist_trajectory, global_palm_orientations)
     """
     global_wrist = extract_global_trajectory(records)
+    global_orientations = extract_global_orientations(records)
     normalized_records: List[LandmarkFrameRecord] = []
 
     for rec in records:
@@ -143,4 +167,5 @@ def normalize_session_records(
         )
         normalized_records.append(norm_rec)
 
-    return normalized_records, global_wrist
+    return normalized_records, global_wrist, global_orientations
+

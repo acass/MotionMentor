@@ -109,3 +109,55 @@ class LandmarkFrameRecord(BaseModel):
     timestamp_ms: float
     hands: List[HandLandmarkData] = Field(default_factory=list)
     valid: bool = True
+
+
+class ComponentScores(BaseModel):
+    """Component scores breakdown (0-100)."""
+    pose: float = 0.0
+    trajectory: float = 0.0
+    orientation: float = 0.0
+    timing: float = 0.0
+    smoothness: float = 0.0
+    sequence: float = 0.0
+
+
+class FeedbackItem(BaseModel):
+    """Actionable coaching instruction linked to measurable deviation and timestamp."""
+    component: str
+    severity: Literal["high", "medium", "low"] = "medium"
+    message: str
+    time_sec: float = 0.0
+    measured_deviation: str = ""
+    recommendation: str = ""
+
+
+class AssessmentResult(BaseModel):
+    """Final assessment result comparing a trainee attempt with an expert reference."""
+    assessment_id: str = Field(default_factory=generate_uuid)
+    attempt_session_id: str
+    reference_profile_id: str
+    activity_name: str = ""
+    scoring_version: str = "1.0.0"
+    overall_score: float = 0.0
+    reliability: Literal["high", "medium", "low"] = "high"
+    interpretation_band: str = "Developing"
+    component_scores: ComponentScores = Field(default_factory=ComponentScores)
+    critical_failures: List[str] = Field(default_factory=list)
+    feedback: List[FeedbackItem] = Field(default_factory=list)
+    created_at: str = Field(default_factory=utc_now)
+
+
+class ReferenceProfile(BaseModel):
+    """Expert reference profile metadata combining multiple demonstrations."""
+    reference_id: str = Field(default_factory=generate_uuid)
+    activity_id: str
+    activity_name: str = ""
+    activity_version: int = 1
+    version: int = 1
+    expert_session_ids: List[str] = Field(default_factory=list)
+    medoid_session_id: str = ""
+    total_demonstrations: int = 0
+    duration_mean_sec: float = 0.0
+    profile_path: str = ""
+    created_at: str = Field(default_factory=utc_now)
+

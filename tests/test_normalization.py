@@ -63,3 +63,13 @@ def test_extract_global_trajectory() -> None:
     assert traj[0, 0] == 0.0
     assert traj[4, 0] == 40.0
     assert traj[4, 1] == 80.0
+
+    from motion_mentor.processing.normalization import extract_global_orientations
+    orient = extract_global_orientations(records)
+    assert orient.shape == (5, 6)
+
+    norm_records, g_wrist, g_orient = normalize_session_records(records)
+    assert len(norm_records) == 5
+    assert g_wrist.shape == (5, 3)
+    assert g_orient.shape == (5, 6)
+

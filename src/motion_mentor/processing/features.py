@@ -118,6 +118,7 @@ def extract_frame_features(
 def extract_session_features_df(
     records: List[LandmarkFrameRecord],
     global_trajectory: Optional[np.ndarray] = None,
+    global_orientations: Optional[np.ndarray] = None,
 ) -> pd.DataFrame:
     """
     Extract full time-series features (geometric + kinematic) for an entire session.
@@ -149,11 +150,19 @@ def extract_session_features_df(
             frame_feats["wrist_y"] = float(pts[0, 1])
             frame_feats["wrist_z"] = float(pts[0, 2])
 
+        if global_orientations is not None and i < len(global_orientations):
+            frame_feats["palm_normal_x"] = float(global_orientations[i, 0])
+            frame_feats["palm_normal_y"] = float(global_orientations[i, 1])
+            frame_feats["palm_normal_z"] = float(global_orientations[i, 2])
+            frame_feats["palm_pitch"] = float(global_orientations[i, 3])
+            frame_feats["palm_roll"] = float(global_orientations[i, 4])
+            frame_feats["palm_yaw"] = float(global_orientations[i, 5])
+
         frame_feats["valid"] = True
         rows.append(frame_feats)
 
     df = pd.DataFrame(rows)
-    if df.empty or len(df) < 2:
+    if df.empty or len(df) < 2 or "wrist_x" not in df.columns:
         return df
 
     # Compute Kinematics (Velocities, Accelerations, Jerk)
