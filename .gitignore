@@ -18,6 +18,9 @@ data/*_export.json
 models/*.task
 models/*.tmp
 
+# graphify knowledge graph (regenerate with /graphify)
+graphify-out/
+
 # Testing and coverage
 .pytest_cache/
 .coverage
