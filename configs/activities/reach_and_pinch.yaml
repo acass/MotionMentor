@@ -1,0 +1,37 @@
+# Benchmark Activity: Reach and Pinch
+activity_id: "reach-and-pinch-001"
+name: "reach_and_pinch"
+version: 1
+description: "Reach hand forward, rotate wrist 90 degrees, execute precision pinch between thumb and index, hold, and return."
+expected_hands: 1
+allow_mirroring: false
+target_fps: 30
+capture_instructions: "Place dominant hand in the center of the capture zone. Keep all fingers visible to the camera."
+stages:
+  - name: "rest_and_approach"
+    description: "Start at rest and reach smoothly toward the target position."
+  - name: "wrist_rotation"
+    description: "Rotate wrist 90 degrees so the palm faces inward."
+  - name: "pinch"
+    description: "Bring thumb tip and index fingertip together into a firm pinch."
+  - name: "hold"
+    description: "Hold the pinch steadily for approximately 1 second."
+  - name: "return"
+    description: "Release pinch and return hand to starting position."
+scoring_weights:
+  pose: 0.25
+  trajectory: 0.25
+  orientation: 0.15
+  timing: 0.15
+  smoothness: 0.10
+  sequence: 0.10
+checkpoints:
+  - id: "cp_rotation_reached"
+    name: "90 Degree Wrist Rotation"
+    critical: true
+  - id: "cp_pinch_contact"
+    name: "Thumb-Index Contact"
+    critical: true
+  - id: "cp_hold_duration"
+    name: "1-Second Pinch Hold"
+    critical: false
