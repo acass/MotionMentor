@@ -281,6 +281,7 @@ async function onActivityChange() {
 async function onReferenceChange() {
   const refId = dom.referenceSelect.value;
   state.currentReference = state.references.find(r => r.reference_id === refId);
+  await loadExpertSessionData();
   if (state.currentAttempt) {
     await loadAssessment(state.currentAttempt.session_id, state.currentReference?.reference_id);
   }
@@ -615,11 +616,16 @@ function renderLoop(now) {
   }
 
   // Draw overlay skeletons on videos
-  drawOverlaySkeleton(dom.expertCanvas, state.expertLandmarks, dom.expertVideo.currentTime, 'cyan');
+  const expertDur = dom.expertVideo.duration || state.currentReference?.duration_mean_sec || state.duration;
+  let expertTime = (dom.expertVideo.duration && !dom.expertVideo.paused && !state.dtwWarpSync)
+    ? dom.expertVideo.currentTime
+    : (state.currentTime / Math.max(0.1, state.duration)) * expertDur;
+
+  drawOverlaySkeleton(dom.expertCanvas, state.expertLandmarks, expertTime, 'cyan');
   drawOverlaySkeleton(dom.traineeCanvas, state.traineeLandmarks, state.currentTime, 'coral');
 
   // Draw superimposed 3D ghost canvas
-  drawSuperimposedSkeleton();
+  drawSuperimposedSkeleton(expertTime);
 
   requestAnimationFrame(renderLoop);
 }
@@ -627,23 +633,30 @@ function renderLoop(now) {
 // Landmark Interpolation & Drawing
 function getLandmarkFrame(landmarkRecords, targetTimeSec) {
   if (!landmarkRecords || landmarkRecords.length === 0) return null;
-  const targetMs = targetTimeSec * 1000.0;
 
-  // Exact or nearest frame search
+  const t0 = landmarkRecords[0].timestamp_ms;
+  const tn = landmarkRecords[landmarkRecords.length - 1].timestamp_ms;
+  const totalDurationMs = tn - t0;
+  const targetElapsedMs = Math.max(0, targetTimeSec * 1000.0);
+
   let closest = landmarkRecords[0];
-  let minDiff = Math.abs(closest.timestamp_ms - targetMs);
+  let minDiff = Infinity;
 
-  for (let i = 1; i < landmarkRecords.length; i++) {
-    const diff = Math.abs(landmarkRecords[i].timestamp_ms - targetMs);
+  for (let i = 0; i < landmarkRecords.length; i++) {
+    const rec = landmarkRecords[i];
+    // Calculate elapsed time from the start of the recording
+    const elapsedMs = (totalDurationMs > 0) ? (rec.timestamp_ms - t0) : (i * (1000.0 / 30.0));
+    const diff = Math.abs(elapsedMs - targetElapsedMs);
     if (diff < minDiff) {
       minDiff = diff;
-      closest = landmarkRecords[i];
-    } else {
+      closest = rec;
+    } else if (diff > minDiff) {
+      // Past the closest frame
       break;
     }
   }
 
-  return closest && closest.valid ? closest : null;
+  return closest;
 }
 
 function drawOverlaySkeleton(canvas, landmarkRecords, timeSec, style) {
@@ -685,8 +698,9 @@ function drawOverlaySkeleton(canvas, landmarkRecords, timeSec, style) {
   });
 }
 
-function drawSuperimposedSkeleton() {
+function drawSuperimposedSkeleton(expertTime) {
   const canvas = dom.superimposedCanvas;
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -703,7 +717,8 @@ function drawSuperimposedSkeleton() {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
   }
 
-  const expFrame = getLandmarkFrame(state.expertLandmarks, dom.expertVideo.currentTime);
+  const expTime = (expertTime !== undefined) ? expertTime : dom.expertVideo.currentTime;
+  const expFrame = getLandmarkFrame(state.expertLandmarks, expTime);
   const traineeFrame = getLandmarkFrame(state.traineeLandmarks, state.currentTime);
 
   // 1. Draw Expert Ghost Skeleton (Cyan glow)
