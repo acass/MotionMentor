@@ -1,7 +1,6 @@
 """Unit tests for geometric and kinematic feature derivation."""
 
 import numpy as np
-import pandas as pd
 from motion_mentor.processing.features import (
     compute_3d_angle,
     compute_palm_orientation,

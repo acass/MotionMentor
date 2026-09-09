@@ -1,7 +1,6 @@
 """End-to-end integration test for the full feature processing pipeline."""
 
 from pathlib import Path
-import numpy as np
 from motion_mentor.processing.features import extract_session_features_df
 from motion_mentor.processing.normalization import normalize_session_records
 from motion_mentor.processing.smoothing import smooth_landmark_records

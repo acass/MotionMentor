@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 from pathlib import Path
@@ -16,7 +15,7 @@ from pydantic import BaseModel
 
 from motion_mentor.app import MotionMentorApp
 from motion_mentor.storage.files import load_features_parquet, load_landmarks_parquet
-from motion_mentor.storage.models import AssessmentResult, ReferenceProfile, Session
+from motion_mentor.storage.models import Session
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +121,7 @@ def get_session_features(session_id: str) -> Dict[str, Any]:
         session = mentor.db.get_session(session_id)
         if not session:
             raise HTTPException(status_code=404, detail=f"Session not found: {session_id}")
-        from scripts.compare_sessions import prepare_session_features
+        from motion_mentor.comparison.pipeline import prepare_session_features
         try:
             df = prepare_session_features(mentor, session)
         except Exception as e:
@@ -196,7 +195,7 @@ def compare_attempt(req: CompareRequest) -> Dict[str, Any]:
             raise HTTPException(status_code=400, detail="No reference profile found for this activity")
         ref_id = latest.reference_id
 
-    from scripts.compare_sessions import compare_attempt_to_reference
+    from motion_mentor.comparison.pipeline import compare_attempt_to_reference
     try:
         assessment = compare_attempt_to_reference(mentor, attempt, ref_id)
         return assessment.model_dump()
@@ -347,7 +346,7 @@ def record_upload(req: RecordUploadRequest) -> Dict[str, Any]:
     assessment_data = None
     ref = mentor.db.get_latest_reference_profile(session.activity_id)
     if ref:
-        from scripts.compare_sessions import prepare_session_features, compare_attempt_to_reference
+        from motion_mentor.comparison.pipeline import prepare_session_features, compare_attempt_to_reference
         try:
             prepare_session_features(mentor, session)
             assessment = compare_attempt_to_reference(mentor, session, ref.reference_id)
@@ -411,7 +410,7 @@ def record_synthetic(req: SyntheticRecordRequest) -> Dict[str, Any]:
     assessment_data = None
     ref = mentor.db.get_latest_reference_profile(activity.activity_id)
     if ref:
-        from scripts.compare_sessions import prepare_session_features, compare_attempt_to_reference
+        from motion_mentor.comparison.pipeline import prepare_session_features, compare_attempt_to_reference
         try:
             prepare_session_features(mentor, session)
             assessment = compare_attempt_to_reference(mentor, session, ref.reference_id)

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import math
 import time
-from typing import Generator, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -26,24 +26,12 @@ def enumerate_cameras(max_devices_to_check: int = 4) -> List[int]:
     return available
 
 
-class BaseCamera:
-    """Base class for camera capture sources."""
+class CameraCapture:
+    """OpenCV VideoCapture wrapper with monotonic timestamping and drop detection.
 
-    def read(self) -> Tuple[bool, Optional[np.ndarray], float]:
-        """
-        Read the next frame.
-        Returns:
-            (success, frame_bgr, monotonic_timestamp_ms)
-        """
-        raise NotImplementedError
-
-    def release(self) -> None:
-        """Release any hardware or file resources."""
-        pass
-
-
-class CameraCapture(BaseCamera):
-    """OpenCV VideoCapture wrapper with monotonic timestamping and drop detection."""
+    Frame sources (this and SyntheticCamera) share the duck-typed interface:
+    ``read() -> (success, frame_bgr, monotonic_timestamp_ms)`` and ``release()``.
+    """
 
     def __init__(
         self,
@@ -110,7 +98,7 @@ class CameraCapture(BaseCamera):
             self.cap.release()
 
 
-class SyntheticCamera(BaseCamera):
+class SyntheticCamera:
     """
     Synthetic camera generator for testing without physical hardware.
     Renders an animated test pattern with a moving hand-like marker.

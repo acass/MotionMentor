@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from motion_mentor.storage.models import LandmarkFrameRecord, QualitySummary, Session
+from motion_mentor.storage.models import LandmarkFrameRecord, QualitySummary
 
 
 class QualityEvaluator:
@@ -185,36 +185,3 @@ def print_terminal_quality_report(
         for reason in summary.status_reasons:
             console.print(f" • {reason}")
     console.print()
-
-
-def generate_markdown_quality_report(
-    session: Session,
-    summary: QualitySummary,
-) -> str:
-    """Generate markdown formatted report suitable for documentation or artifact logs."""
-    status_str = "PASS" if summary.meets_criteria else "NEEDS REVIEW"
-    md = f"""# Capture Quality Report: {session.session_id}
-
-- **Activity:** {session.activity_name or session.activity_id} (v{session.activity_version})
-- **Role:** {session.role.capitalize()}
-- **Duration:** {session.duration_seconds}s ({summary.total_frames} frames)
-- **Resolution:** {session.resolution[0]}x{session.resolution[1]} @ {session.nominal_fps} FPS nominal
-- **Result:** **{status_str}**
-
-## Metrics Summary
-
-| Metric | Measured | Target | Verdict |
-|---|---|---|---|
-| Hand Coverage | {summary.detection_coverage_pct:.1f}% | >= 90% | {'✅ PASS' if summary.detection_coverage_pct >= 90.0 else '❌ FAIL'} |
-| Effective FPS | {summary.effective_fps:.1f} FPS | >= 24 FPS | {'✅ PASS' if summary.effective_fps >= 24.0 else '❌ FAIL'} |
-| Median Latency | {summary.median_latency_ms:.1f} ms | <= 40 ms | {'✅ PASS' if summary.median_latency_ms <= 40.0 else '⚠️ WARN'} |
-| P95 Latency | {summary.p95_latency_ms:.1f} ms | <= 50 ms | {'✅ PASS' if summary.p95_latency_ms <= 50.0 else '⚠️ WARN'} |
-| Dropped Frames | {summary.dropped_frames} | < 5% | {'✅ PASS' if summary.dropped_frames <= 5 else '❌ FAIL'} |
-| Jitter (Std) | {summary.jitter_std_ms:.2f} ms | - | Info |
-
-"""
-    if summary.status_reasons:
-        md += "## Issues & Recommendations\n\n"
-        for r in summary.status_reasons:
-            md += f"- {r}\n"
-    return md

@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
-"""Compare a trainee session against an expert reference profile or demonstration."""
+"""End-to-end comparison pipeline: feature prep, DTW alignment, scoring, feedback."""
 
-import sys
+from __future__ import annotations
+
 from pathlib import Path
 
-# Add src to sys.path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-
-import argparse
 import pandas as pd
 from rich.console import Console
 from rich.panel import Panel
@@ -17,10 +13,7 @@ from motion_mentor.app import MotionMentorApp
 from motion_mentor.comparison.dtw import align_sequences, constrained_dtw
 from motion_mentor.comparison.feedback import FeedbackGenerator
 from motion_mentor.comparison.reference import ReferenceProfileBuilder
-from motion_mentor.comparison.scoring import (
-    ScoringEngine,
-    determine_interpretation_band,
-)
+from motion_mentor.comparison.scoring import ScoringEngine, determine_interpretation_band
 from motion_mentor.processing.features import extract_session_features_df
 from motion_mentor.processing.normalization import normalize_session_records
 from motion_mentor.processing.smoothing import smooth_landmark_records
@@ -29,7 +22,7 @@ from motion_mentor.storage.files import (
     load_landmarks_parquet,
     save_features_parquet,
 )
-from motion_mentor.storage.models import AssessmentResult, ReferenceProfile, Session
+from motion_mentor.storage.models import AssessmentResult, Session
 
 console = Console()
 
@@ -220,23 +213,3 @@ def print_assessment_scorecard(assessment: AssessmentResult) -> None:
         if item.recommendation:
             console.print(f"    [dim]Tip:[/dim] {item.recommendation}")
     console.print()
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Compare a trainee attempt with an expert reference.")
-    parser.add_argument("--attempt", required=True, help="Trainee attempt session UUID")
-    parser.add_argument("--reference", required=True, help="Reference profile UUID or Expert session UUID")
-    args = parser.parse_args()
-
-    app = MotionMentorApp()
-    attempt = app.db.get_session(args.attempt)
-    if not attempt:
-        console.print(f"[bold red]Attempt session {args.attempt} not found.[/bold red]")
-        sys.exit(1)
-
-    assessment = compare_attempt_to_reference(app, attempt, args.reference)
-    print_assessment_scorecard(assessment)
-
-
-if __name__ == "__main__":
-    main()

@@ -42,12 +42,6 @@ class DatabaseManager:
                     activity_id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
                     version INTEGER NOT NULL,
-                    description TEXT,
-                    expected_hands INTEGER NOT NULL DEFAULT 1,
-                    allow_mirroring INTEGER NOT NULL DEFAULT 0,
-                    target_fps INTEGER NOT NULL DEFAULT 30,
-                    scoring_profile_id TEXT,
-                    capture_instructions TEXT,
                     config_json TEXT NOT NULL,
                     created_at TEXT NOT NULL
                 );
@@ -127,22 +121,13 @@ class DatabaseManager:
             conn.execute(
                 """
                 INSERT OR REPLACE INTO activities (
-                    activity_id, name, version, description,
-                    expected_hands, allow_mirroring, target_fps,
-                    scoring_profile_id, capture_instructions,
-                    config_json, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                    activity_id, name, version, config_json, created_at
+                ) VALUES (?, ?, ?, ?, ?);
                 """,
                 (
                     activity.activity_id,
                     activity.name,
                     activity.version,
-                    activity.description,
-                    activity.expected_hands,
-                    1 if activity.allow_mirroring else 0,
-                    activity.target_fps,
-                    activity.scoring_profile_id,
-                    activity.capture_instructions,
                     activity.model_dump_json(),
                     activity.created_at,
                 ),

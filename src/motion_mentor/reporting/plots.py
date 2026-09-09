@@ -1,22 +1,12 @@
-#!/usr/bin/env python3
-"""Plot extracted motion features (joint angles, pinch aperture, kinematics) over time."""
+"""Multi-panel kinematic and geometric plots of extracted session features."""
 
-import sys
+from __future__ import annotations
+
 from pathlib import Path
 
-# Add src to sys.path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-
-import argparse
 import matplotlib.pyplot as plt
 import pandas as pd
 from rich.console import Console
-
-from motion_mentor.app import MotionMentorApp
-from motion_mentor.processing.features import extract_session_features_df
-from motion_mentor.processing.normalization import normalize_session_records
-from motion_mentor.processing.smoothing import smooth_landmark_records
-from motion_mentor.storage.files import load_features_parquet, load_landmarks_parquet
 
 console = Console()
 
@@ -95,38 +85,3 @@ def plot_session_features(
     if show_plot:
         plt.show()
     plt.close()
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Plot motion features from a recorded session.")
-    parser.add_argument("--session", required=True, help="Session UUID")
-    parser.add_argument("--output", default=None, help="Path to save plot PNG")
-    parser.add_argument("--no-show", action="store_true", help="Do not display interactive plot window")
-    parser.add_argument("--smooth", action="store_true", default=True, help="Apply One Euro filter before plotting")
-    args = parser.parse_args()
-
-    app = MotionMentorApp()
-    session = app.db.get_session(args.session)
-    if not session or not session.landmark_path:
-        console.print(f"[red]Session {args.session} not found in database.[/red]")
-        sys.exit(1)
-
-    raw_records = load_landmarks_parquet(session.landmark_path)
-    records = raw_records
-    if args.smooth:
-        records = smooth_landmark_records(records)
-    records, global_wrist, global_orient = normalize_session_records(records)
-
-    df_features = extract_session_features_df(
-        records, global_trajectory=global_wrist, global_orientations=global_orient
-    )
-    plot_session_features(
-        df_features,
-        session_id=session.session_id,
-        output_png=args.output or f"data/features/{session.session_id}_features.png",
-        show_plot=not args.no_show,
-    )
-
-
-if __name__ == "__main__":
-    main()

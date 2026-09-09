@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 import numpy as np
 import pandas as pd
 import pyarrow as pa
@@ -133,19 +133,6 @@ def export_session_json(
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
-
-
-def load_session_json(
-    input_path: str | Path,
-) -> tuple[Session, List[LandmarkFrameRecord]]:
-    """Load session metadata and landmarks from a JSON interchange file."""
-    input_path = Path(input_path)
-    with open(input_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    session = Session.model_validate(data["session"])
-    records = [LandmarkFrameRecord.model_validate(f) for f in data["frames"]]
-    return session, records
 
 
 def save_features_parquet(

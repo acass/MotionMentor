@@ -4,30 +4,17 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import List, Literal, Optional, Tuple
-import cv2
-import numpy as np
+from typing import Optional
 import yaml
 
-from motion_mentor.capture.camera import BaseCamera, CameraCapture, SyntheticCamera
+from motion_mentor.capture.camera import CameraCapture, SyntheticCamera
 from motion_mentor.capture.hud import HUDOverlay
-from motion_mentor.capture.recorder import SessionRecorder
 from motion_mentor.reporting.quality import (
     QualityEvaluator,
-    print_terminal_quality_report,
 )
 from motion_mentor.storage.database import DatabaseManager
-from motion_mentor.storage.files import (
-    export_session_json,
-    load_landmarks_parquet,
-)
 from motion_mentor.storage.models import (
     Activity,
-    HandLandmarkData,
-    LandmarkFrameRecord,
-    QualitySummary,
-    Session,
-    generate_uuid,
 )
 from motion_mentor.tracking.hand_tracker import HandTracker
 
@@ -118,7 +105,7 @@ class MotionMentorApp:
         width: int = 1280,
         height: int = 720,
         fps: int = 30,
-    ) -> BaseCamera:
+    ) -> CameraCapture | SyntheticCamera:
         """Create physical or synthetic camera source."""
         if use_synthetic:
             return SyntheticCamera(width=width, height=height, target_fps=fps)

@@ -9,11 +9,8 @@ import pandas as pd
 
 from motion_mentor.storage.models import (
     Activity,
-    AssessmentResult,
     ComponentScores,
     QualitySummary,
-    ReferenceProfile,
-    Session,
 )
 
 JOINT_ANGLE_FEATURES = [

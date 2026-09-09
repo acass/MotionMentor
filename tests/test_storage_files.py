@@ -1,11 +1,11 @@
 """Unit tests for Parquet and JSON landmark persistence."""
 
+import json
 from pathlib import Path
 import numpy as np
 from motion_mentor.storage.files import (
     export_session_json,
     load_landmarks_parquet,
-    load_session_json,
     save_landmarks_parquet,
 )
 from motion_mentor.storage.models import (
@@ -97,7 +97,7 @@ def test_json_export_round_trip(tmp_path: Path) -> None:
     export_session_json(session, records, json_path)
     assert json_path.exists()
 
-    loaded_sess, loaded_records = load_session_json(json_path)
-    assert loaded_sess.session_id == "sess_json_01"
-    assert loaded_sess.role == "trainee"
-    assert len(loaded_records) == 1
+    data = json.loads(json_path.read_text())
+    assert data["session"]["session_id"] == "sess_json_01"
+    assert data["session"]["role"] == "trainee"
+    assert len(data["frames"]) == 1

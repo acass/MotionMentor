@@ -1,13 +1,9 @@
 """Unit tests for QualityEvaluator and reporting output."""
 
-from motion_mentor.reporting.quality import (
-    QualityEvaluator,
-    generate_markdown_quality_report,
-)
+from motion_mentor.reporting.quality import QualityEvaluator
 from motion_mentor.storage.models import (
     HandLandmarkData,
     LandmarkFrameRecord,
-    Session,
 )
 
 
@@ -78,27 +74,3 @@ def test_quality_evaluator_fail_coverage() -> None:
     assert summary.detection_coverage_pct == 50.0
     assert summary.meets_criteria is False
     assert any("Hand detection coverage" in s for s in summary.status_reasons)
-
-
-def test_markdown_report_generation() -> None:
-    evaluator = QualityEvaluator()
-    records = [
-        LandmarkFrameRecord(
-            session_id="md_sess",
-            frame_index=0,
-            timestamp_ms=0.0,
-            hands=[],
-            valid=False,
-        )
-    ]
-    summary = evaluator.evaluate(records)
-    session = Session(
-        session_id="md_sess",
-        activity_id="reach_and_pinch",
-        role="expert",
-        duration_seconds=1.0,
-        total_frames=1,
-    )
-    md = generate_markdown_quality_report(session, summary)
-    assert "# Capture Quality Report: md_sess" in md
-    assert "reach_and_pinch" in md

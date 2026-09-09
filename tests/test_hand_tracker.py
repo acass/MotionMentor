@@ -1,7 +1,6 @@
 """Integration tests for HandTracker and skeleton visualization."""
 
 import numpy as np
-import cv2
 from motion_mentor.tracking.hand_tracker import (
     HandTracker,
     draw_hand_skeleton,

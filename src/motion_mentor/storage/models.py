@@ -78,13 +78,6 @@ class Session(BaseModel):
     quality_summary: Optional[QualitySummary] = None
 
 
-class LandmarkPoint(BaseModel):
-    """A single 3D landmark point."""
-    x: float
-    y: float
-    z: float
-
-
 class HandLandmarkData(BaseModel):
     """Landmark data for a single detected hand in a frame."""
     hand_track_id: int = 0

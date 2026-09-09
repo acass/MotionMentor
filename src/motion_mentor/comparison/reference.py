@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-from motion_mentor.comparison.dtw import align_sequences, constrained_dtw
+from motion_mentor.comparison.dtw import constrained_dtw
 from motion_mentor.storage.models import Activity, ReferenceProfile, Session, generate_uuid
 
 logger = logging.getLogger(__name__)

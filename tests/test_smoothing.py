@@ -4,7 +4,6 @@ import numpy as np
 from motion_mentor.processing.smoothing import (
     OneEuroFilter,
     interpolate_short_gaps,
-    smooth_landmark_records,
 )
 from motion_mentor.storage.models import HandLandmarkData, LandmarkFrameRecord
 

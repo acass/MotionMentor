@@ -10,14 +10,20 @@ MotionMentor captures hand movements from a standard camera, extracts 21 landmar
 
 ```bash
 # Test camera and preview skeleton overlay
-uv run python scripts/camera_test.py
+uv run motion-mentor test-camera
 
 # Record a new session (expert or trainee)
-uv run python scripts/record_session.py --activity reach_and_pinch --role expert
+uv run motion-mentor record --activity reach_and_pinch --role expert
 
 # Replay a recorded session
-uv run python scripts/replay_session.py --session <SESSION_ID>
+uv run motion-mentor replay --session <SESSION_ID>
+
+# Process, build a reference, compare, and serve the dashboard
+uv run motion-mentor process --session <SESSION_ID>
+uv run motion-mentor build-reference --activity reach_and_pinch
+uv run motion-mentor compare --attempt <SESSION_ID> --reference <REF_ID>
+uv run motion-mentor serve
 
 # Run test suite
-uv run pytest
+uv run --extra dev pytest
 ```
