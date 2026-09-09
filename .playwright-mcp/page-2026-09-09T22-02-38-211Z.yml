@@ -1,0 +1,346 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e10]:
+      - generic [ref=e11]: MOTIONMENTOR
+      - generic [ref=e12]: Explainable Biomechanics Coaching
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]: "Activity:"
+        - combobox "Activity:" [ref=e16] [cursor=pointer]:
+          - option "REACH AND PINCH" [selected]
+      - generic [ref=e17]:
+        - generic [ref=e18]: "Trainee Attempt:"
+        - combobox "Trainee Attempt:" [ref=e19] [cursor=pointer]:
+          - option "[TRAINEE] 4e08d082 (4.92s, 68% cov) 2:22:24 PM" [selected]
+          - option "[TRAINEE] bfb98dcf (4.86s, 78% cov) 2:22:00 PM"
+          - option "[TRAINEE] 57cdd211 (4.91s, 71% cov) 2:18:59 PM"
+          - option "[TRAINEE] 624e8960 (4.98s, 73% cov) 2:10:13 PM"
+          - option "[TRAINEE] 4901e0e4 (4.98s, 51% cov) 2:06:09 PM"
+          - option "[TRAINEE] 212f609a (4.95s, 52% cov) 2:05:37 PM"
+          - option "[TRAINEE] e68271fd (4.98s, 59% cov) 12:32:00 PM"
+          - option "[TRAINEE] de136f79 (5s, 100% cov) 12:13:41 PM"
+          - option "[TRAINEE] 93fdbc34 (4.95s, 65% cov) 12:05:58 PM"
+          - option "[TRAINEE] 15db0505 (5s, 83% cov) 12:05:38 PM"
+          - option "[TRAINEE] d8620780 (5s, 85% cov) 12:04:19 PM"
+          - option "[TRAINEE] 23273999 (0.75s, 0% cov) 12:01:34 PM"
+          - option "[TRAINEE] 20e99c41 (4.97s, 73% cov) 11:31:16 AM"
+          - option "[TRAINEE] trainee_ (3.2s, 100% cov) 9:29:52 AM"
+      - generic [ref=e20]:
+        - generic [ref=e21]: "Reference:"
+        - combobox "Reference:" [ref=e22] [cursor=pointer]:
+          - option "RECORDED · 973abcb0 · 1 take · 4.98s" [selected]
+          - option "RECORDED · 973abcb0 · 1 take · 4.98s"
+          - option "GENERATED · acec0675 · 1 take · 5s"
+      - button "Record Take" [ref=e23] [cursor=pointer]
+      - button "Re-Evaluate" [ref=e25] [cursor=pointer]
+      - button "History" [active] [ref=e28] [cursor=pointer]
+  - main [ref=e32]:
+    - generic [ref=e33]:
+      - generic [ref=e34]:
+        - generic [ref=e36]:
+          - generic [ref=e37]: EXPERT REFERENCE
+          - generic [ref=e39]: 0.0s / Frame 0
+        - generic [ref=e43]:
+          - generic [ref=e44]: TRAINEE ATTEMPT
+          - generic [ref=e46]: 0.0s / Frame 0
+      - generic [ref=e50]:
+        - generic [ref=e51]: SUPERIMPOSED SKELETON ALIGNMENT
+        - generic [ref=e52]:
+          - generic [ref=e53]: Expert Ghost
+          - generic [ref=e55]: Trainee Skeleton
+          - generic [ref=e57]: Joint Deviation (>2σ)
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - generic:
+            - generic: Approach
+            - generic: 90° Rotation
+            - generic: Pinch Contact
+            - generic: Hold
+            - generic: Return
+          - slider [ref=e63] [cursor=pointer]: "0"
+          - generic [ref=e64]:
+            - generic [ref=e65]: 00:00.0
+            - generic [ref=e66]: /
+            - generic [ref=e67]: 00:04.9
+            - generic [ref=e68]: 30 FPS
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - 'button "Step Back 1 Frame (Key: [)" [ref=e71] [cursor=pointer]'
+            - 'button "Play/Pause (Key: Space)" [ref=e74] [cursor=pointer]'
+            - 'button "Step Forward 1 Frame (Key: ])" [ref=e77] [cursor=pointer]'
+          - generic [ref=e81]:
+            - generic "Align trainee and expert time in DTW warped space" [ref=e82] [cursor=pointer]: DTW Warped Sync
+            - generic "Show superimposed 3D skeleton view" [ref=e85] [cursor=pointer]: Ghost Skeleton
+          - generic [ref=e88]:
+            - generic [ref=e89]: "Speed:"
+            - combobox "Speed:" [ref=e90] [cursor=pointer]:
+              - option "0.25x"
+              - option "0.5x"
+              - option "1.0x" [selected]
+    - complementary [ref=e91]:
+      - generic [ref=e93]:
+        - generic [ref=e98]:
+          - generic [ref=e99]: "83.1"
+          - generic [ref=e100]: / 100
+        - generic [ref=e101]:
+          - generic [ref=e102]: Good match
+          - generic [ref=e103]:
+            - generic [ref=e104]: "Reliability:"
+            - generic [ref=e105]: LOW
+          - generic [ref=e106]:
+            - generic [ref=e107]: "Hand Tracking:"
+            - generic [ref=e108]: 68% (15.3 FPS)
+      - generic [ref=e109]:
+        - generic [ref=e110]: COMPONENT DIMENSIONS
+        - generic [ref=e111]:
+          - generic [ref=e113]:
+            - generic [ref=e114]: Local Hand Pose (25%)
+            - generic [ref=e115]: "100.0"
+          - generic [ref=e119]:
+            - generic [ref=e120]: Global Trajectory (25%)
+            - generic [ref=e121]: "100.0"
+          - generic [ref=e125]:
+            - generic [ref=e126]: Hand Orientation (15%)
+            - generic [ref=e127]: "100.0"
+          - generic [ref=e131]:
+            - generic [ref=e132]: Timing & Duration (15%)
+            - generic [ref=e133]: "75.9"
+          - generic [ref=e137]:
+            - generic [ref=e138]: Speed & Smoothness (10%)
+            - generic [ref=e139]: "0.0"
+          - generic [ref=e142]:
+            - generic [ref=e143]: Sequence & Checkpoints (10%)
+            - generic [ref=e144]: "66.7"
+      - generic [ref=e147]:
+        - generic [ref=e148]:
+          - generic [ref=e149]: COACHING CORRECTIONS
+          - generic [ref=e150]: 1 tips
+        - generic [ref=e152]:
+          - generic [ref=e153]:
+            - generic [ref=e154]: "[Trajectory]"
+            - button "Jump to 0.0s" [ref=e155] [cursor=pointer]
+          - generic [ref=e156]: Hand trajectory deviated from the demonstrated path around t=0.0s.
+          - generic [ref=e157]: "Tip: Keep your hand centered in the workspace during the movement."
+      - generic [ref=e159]:
+        - generic [ref=e160]: FEATURE TIMELINE
+        - combobox [ref=e161] [cursor=pointer]:
+          - option "Pinch Aperture" [selected]
+          - option "Wrist Pitch (Tilt)"
+          - option "Wrist Roll (Rotation)"
+          - option "Vertical Position (Y)"
+          - option "Linear Speed"
+  - generic [ref=e164]:
+    - generic [ref=e165]:
+      - heading "Performance History & Attempts" [level=3] [ref=e166]
+      - button "×" [ref=e167] [cursor=pointer]
+    - table [ref=e169]:
+      - rowgroup [ref=e170]:
+        - row [ref=e171]:
+          - columnheader "Date / Time" [ref=e172]
+          - columnheader "Role" [ref=e173]
+          - columnheader "Duration" [ref=e174]
+          - columnheader "Coverage" [ref=e175]
+          - columnheader "Overall Score" [ref=e176]
+          - columnheader "Band" [ref=e177]
+          - columnheader "Action" [ref=e178]
+      - rowgroup [ref=e179]:
+        - row [ref=e180]:
+          - cell "9/9/2026, 2:22:24 PM" [ref=e181]
+          - cell "TRAINEE" [ref=e182]
+          - cell "4.9s" [ref=e184]
+          - cell "68%" [ref=e185]
+          - cell [ref=e186]:
+            - strong [ref=e187]: "--"
+          - cell "Recorded" [ref=e188]
+          - cell [ref=e189]:
+            - button "Load" [ref=e190] [cursor=pointer]
+        - row [ref=e191]:
+          - cell "9/9/2026, 2:22:00 PM" [ref=e192]
+          - cell "TRAINEE" [ref=e193]
+          - cell "4.9s" [ref=e195]
+          - cell "78%" [ref=e196]
+          - cell [ref=e197]:
+            - strong [ref=e198]: "--"
+          - cell "Recorded" [ref=e199]
+          - cell [ref=e200]:
+            - button "Load" [ref=e201] [cursor=pointer]
+        - row [ref=e202]:
+          - cell "9/9/2026, 2:18:59 PM" [ref=e203]
+          - cell "TRAINEE" [ref=e204]
+          - cell "4.9s" [ref=e206]
+          - cell "71%" [ref=e207]
+          - cell [ref=e208]:
+            - strong [ref=e209]: "--"
+          - cell "Recorded" [ref=e210]
+          - cell [ref=e211]:
+            - button "Load" [ref=e212] [cursor=pointer]
+        - row [ref=e213]:
+          - cell "9/9/2026, 2:10:13 PM" [ref=e214]
+          - cell "TRAINEE" [ref=e215]
+          - cell "5.0s" [ref=e217]
+          - cell "73%" [ref=e218]
+          - cell [ref=e219]:
+            - strong [ref=e220]: "--"
+          - cell "Recorded" [ref=e221]
+          - cell [ref=e222]:
+            - button "Load" [ref=e223] [cursor=pointer]
+        - row [ref=e224]:
+          - cell "9/9/2026, 2:09:50 PM" [ref=e225]
+          - cell "EXPERT" [ref=e226]
+          - cell "5.0s" [ref=e228]
+          - cell "71%" [ref=e229]
+          - cell [ref=e230]:
+            - strong [ref=e231]: "--"
+          - cell "Recorded" [ref=e232]
+          - cell [ref=e233]:
+            - button "Load" [ref=e234] [cursor=pointer]
+        - row [ref=e235]:
+          - cell "9/9/2026, 2:06:09 PM" [ref=e236]
+          - cell "TRAINEE" [ref=e237]
+          - cell "5.0s" [ref=e239]
+          - cell "51%" [ref=e240]
+          - cell [ref=e241]:
+            - strong [ref=e242]: "--"
+          - cell "Recorded" [ref=e243]
+          - cell [ref=e244]:
+            - button "Load" [ref=e245] [cursor=pointer]
+        - row [ref=e246]:
+          - cell "9/9/2026, 2:05:37 PM" [ref=e247]
+          - cell "TRAINEE" [ref=e248]
+          - cell "5.0s" [ref=e250]
+          - cell "52%" [ref=e251]
+          - cell [ref=e252]:
+            - strong [ref=e253]: "--"
+          - cell "Recorded" [ref=e254]
+          - cell [ref=e255]:
+            - button "Load" [ref=e256] [cursor=pointer]
+        - row [ref=e257]:
+          - cell "9/9/2026, 2:05:13 PM" [ref=e258]
+          - cell "EXPERT" [ref=e259]
+          - cell "5.0s" [ref=e261]
+          - cell "57%" [ref=e262]
+          - cell [ref=e263]:
+            - strong [ref=e264]: "--"
+          - cell "Recorded" [ref=e265]
+          - cell [ref=e266]:
+            - button "Load" [ref=e267] [cursor=pointer]
+        - row [ref=e268]:
+          - cell "9/9/2026, 12:32:00 PM" [ref=e269]
+          - cell "TRAINEE" [ref=e270]
+          - cell "5.0s" [ref=e272]
+          - cell "59%" [ref=e273]
+          - cell [ref=e274]:
+            - strong [ref=e275]: "--"
+          - cell "Recorded" [ref=e276]
+          - cell [ref=e277]:
+            - button "Load" [ref=e278] [cursor=pointer]
+        - row [ref=e279]:
+          - cell "9/9/2026, 12:24:20 PM" [ref=e280]
+          - cell "EXPERT" [ref=e281]
+          - cell "5.0s" [ref=e283]
+          - cell "100%" [ref=e284]
+          - cell [ref=e285]:
+            - strong [ref=e286]: "--"
+          - cell "Recorded" [ref=e287]
+          - cell [ref=e288]:
+            - button "Load" [ref=e289] [cursor=pointer]
+        - row [ref=e290]:
+          - cell "9/9/2026, 12:24:07 PM" [ref=e291]
+          - cell "EXPERT" [ref=e292]
+          - cell "5.0s" [ref=e294]
+          - cell "100%" [ref=e295]
+          - cell [ref=e296]:
+            - strong [ref=e297]: "--"
+          - cell "Recorded" [ref=e298]
+          - cell [ref=e299]:
+            - button "Load" [ref=e300] [cursor=pointer]
+        - row [ref=e301]:
+          - cell "9/9/2026, 12:13:41 PM" [ref=e302]
+          - cell "TRAINEE" [ref=e303]
+          - cell "5.0s" [ref=e305]
+          - cell "100%" [ref=e306]
+          - cell [ref=e307]:
+            - strong [ref=e308]: "--"
+          - cell "Recorded" [ref=e309]
+          - cell [ref=e310]:
+            - button "Load" [ref=e311] [cursor=pointer]
+        - row [ref=e312]:
+          - cell "9/9/2026, 12:05:58 PM" [ref=e313]
+          - cell "TRAINEE" [ref=e314]
+          - cell "5.0s" [ref=e316]
+          - cell "65%" [ref=e317]
+          - cell [ref=e318]:
+            - strong [ref=e319]: "--"
+          - cell "Recorded" [ref=e320]
+          - cell [ref=e321]:
+            - button "Load" [ref=e322] [cursor=pointer]
+        - row [ref=e323]:
+          - cell "9/9/2026, 12:05:38 PM" [ref=e324]
+          - cell "TRAINEE" [ref=e325]
+          - cell "5.0s" [ref=e327]
+          - cell "83%" [ref=e328]
+          - cell [ref=e329]:
+            - strong [ref=e330]: "--"
+          - cell "Recorded" [ref=e331]
+          - cell [ref=e332]:
+            - button "Load" [ref=e333] [cursor=pointer]
+        - row [ref=e334]:
+          - cell "9/9/2026, 12:04:19 PM" [ref=e335]
+          - cell "TRAINEE" [ref=e336]
+          - cell "5.0s" [ref=e338]
+          - cell "85%" [ref=e339]
+          - cell [ref=e340]:
+            - strong [ref=e341]: "--"
+          - cell "Recorded" [ref=e342]
+          - cell [ref=e343]:
+            - button "Load" [ref=e344] [cursor=pointer]
+        - row [ref=e345]:
+          - cell "9/9/2026, 12:01:34 PM" [ref=e346]
+          - cell "TRAINEE" [ref=e347]
+          - cell "0.8s" [ref=e349]
+          - cell "0%" [ref=e350]
+          - cell [ref=e351]:
+            - strong [ref=e352]: "--"
+          - cell "Recorded" [ref=e353]
+          - cell [ref=e354]:
+            - button "Load" [ref=e355] [cursor=pointer]
+        - row [ref=e356]:
+          - cell "9/9/2026, 11:31:16 AM" [ref=e357]
+          - cell "TRAINEE" [ref=e358]
+          - cell "5.0s" [ref=e360]
+          - cell "73%" [ref=e361]
+          - cell [ref=e362]:
+            - strong [ref=e363]: "--"
+          - cell "Recorded" [ref=e364]
+          - cell [ref=e365]:
+            - button "Load" [ref=e366] [cursor=pointer]
+        - row [ref=e367]:
+          - cell "9/9/2026, 9:29:52 AM" [ref=e368]
+          - cell "TRAINEE" [ref=e369]
+          - cell "3.2s" [ref=e371]
+          - cell "100%" [ref=e372]
+          - cell [ref=e373]:
+            - strong [ref=e374]: "--"
+          - cell "Recorded" [ref=e375]
+          - cell [ref=e376]:
+            - button "Load" [ref=e377] [cursor=pointer]
+        - row [ref=e378]:
+          - cell "9/9/2026, 9:13:41 AM" [ref=e379]
+          - cell "EXPERT" [ref=e380]
+          - cell "5.0s" [ref=e382]
+          - cell "100%" [ref=e383]
+          - cell [ref=e384]:
+            - strong [ref=e385]: "--"
+          - cell "Recorded" [ref=e386]
+          - cell [ref=e387]:
+            - button "Load" [ref=e388] [cursor=pointer]
+        - row [ref=e389]:
+          - cell "9/9/2026, 9:02:42 AM" [ref=e390]
+          - cell "EXPERT" [ref=e391]
+          - cell "3.0s" [ref=e393]
+          - cell "0%" [ref=e394]
+          - cell [ref=e395]:
+            - strong [ref=e396]: "--"
+          - cell "Recorded" [ref=e397]
+          - cell [ref=e398]:
+            - button "Load" [ref=e399] [cursor=pointer]

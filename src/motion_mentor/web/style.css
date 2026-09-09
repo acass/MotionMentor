@@ -17,8 +17,8 @@
   --color-danger: #ef4444;
 
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-secondary: #a9b6ca;
+  --text-muted: #9aa7bd;
 
   --font-display: 'Outfit', -apple-system, sans-serif;
   --font-sans: 'Inter', -apple-system, sans-serif;
@@ -121,6 +121,7 @@ body {
 }
 
 .brand-title {
+  margin: 0;
   font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 800;

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body class="dark-theme">
   <!-- Top Navigation Bar -->
@@ -23,7 +23,7 @@
         </svg>
       </div>
       <div class="brand-text">
-        <span class="brand-title">MOTION<span class="accent-cyan">MENTOR</span></span>
+        <h1 class="brand-title">MOTION<span class="accent-cyan">MENTOR</span></h1>
         <span class="brand-sub">Explainable Biomechanics Coaching</span>
       </div>
     </div>
@@ -130,7 +130,7 @@
             <span class="phase-label" style="left: 78%;">Hold</span>
             <span class="phase-label" style="left: 92%;">Return</span>
           </div>
-          <input type="range" id="masterScrubber" class="styled-range" min="0" max="1000" value="0" step="1">
+          <input type="range" id="masterScrubber" class="styled-range" min="0" max="1000" value="0" step="1" aria-label="Playback timeline scrubber">
           <div class="time-readout">
             <span id="currentTimeDisplay">00:00.0</span>
             <span class="separator">/</span>
@@ -256,7 +256,7 @@
       <div class="chart-container glass-panel">
         <div class="panel-section-title">
           <span>FEATURE TIMELINE</span>
-          <select id="featureChartSelect" class="styled-select chart-select">
+          <select id="featureChartSelect" class="styled-select chart-select" aria-label="Feature timeline metric">
             <option value="pinch_distance">Pinch Aperture</option>
             <option value="palm_pitch">Wrist Pitch (Tilt)</option>
             <option value="palm_roll">Wrist Roll (Rotation)</option>

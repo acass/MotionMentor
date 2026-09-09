@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Literal, Optional
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -26,14 +26,22 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Enable CORS for local development
+# Enable CORS for local development. No credentials are used, so a wildcard
+# origin is safe here; keep credentials off so browsers do not treat the
+# reflected origin as trusted.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon() -> Response:
+    """No favicon asset; answer quietly instead of a 404."""
+    return Response(status_code=204)
 
 _mentor_app: Optional[MotionMentorApp] = None
 
@@ -140,7 +148,7 @@ def list_activities() -> List[Dict[str, Any]]:
 @app.get("/api/sessions")
 def list_sessions(
     activity_id: Optional[str] = Query(None),
-    role: Optional[str] = Query(None),
+    role: Optional[Literal["expert", "trainee"]] = Query(None),
 ) -> List[Dict[str, Any]]:
     """List recorded sessions with optional filters."""
     mentor = get_mentor_app()
