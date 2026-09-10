@@ -2,6 +2,8 @@
 
 Explainable hand motion skill assessment and procedural coaching system using computer vision.
 
+<img width="800" height="500" alt="image" src="https://github.com/user-attachments/assets/200cfa32-51c1-4cd2-92b2-c20f02be74e7" />
+
 ## Overview
 
 MotionMentor captures hand movements from a standard camera, extracts 21 landmarks per hand, computes explainable geometric and kinematic features, and compares attempts against expert reference profiles using constrained Dynamic Time Warping (DTW).
