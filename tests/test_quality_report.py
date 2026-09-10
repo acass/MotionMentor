@@ -127,3 +127,63 @@ def test_browser_upload_evaluator_accepts_15_fps_webcam_take() -> None:
         coarse, latencies_ms=[24.0] * 25, dropped_frames=0
     )
     assert coarse_summary.meets_criteria is False
+
+
+def test_camera_drop_count_never_exceeds_frames_taken():
+    """A caller slower than the camera skips stale frames instead of stalling,
+    and the reported drop count stays bounded by the frames actually taken."""
+    import threading
+    import time
+
+    import numpy as np
+
+    from motion_mentor.capture.camera import CameraCapture
+
+    class FakeCap:
+        """Delivers a frame every 5 ms, like a camera running at 200 FPS."""
+
+        def __init__(self):
+            self.closed = False
+
+        def read(self):
+            time.sleep(0.005)
+            if self.closed:
+                return False, None
+            return True, np.zeros((4, 4, 3), dtype=np.uint8)
+
+        def isOpened(self):
+            return not self.closed
+
+        def release(self):
+            self.closed = True
+
+    cam = CameraCapture.__new__(CameraCapture)
+    cam.cap = FakeCap()
+    cam.target_fps = 200
+    cam.expected_frame_interval_ms = 5.0
+    cam.frame_count = 0
+    cam.dropped_frame_count = 0
+    cam.last_timestamp_ms = 0.0
+    cam.start_time_ms = 0.0
+    cam._frame_ready = threading.Condition()
+    cam._latest = None
+    cam._captured = 0
+    cam._consumed = 0
+    cam._stopped = False
+    cam._thread = threading.Thread(target=cam._pump, daemon=True)
+    cam._thread.start()
+
+    try:
+        timestamps = []
+        for _ in range(10):
+            ret, frame, ts_ms = cam.read()
+            assert ret and frame is not None
+            timestamps.append(ts_ms)
+            time.sleep(0.02)  # caller 4x slower than the camera
+    finally:
+        cam.release()
+
+    assert cam.frame_count == 10
+    assert len(set(timestamps)) == 10  # never handed the same frame twice
+    assert cam.dropped_frame_count > 0  # slow caller really did skip frames
+    assert cam.dropped_frame_count <= cam._captured

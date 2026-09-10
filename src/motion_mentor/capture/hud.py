@@ -10,6 +10,30 @@ from motion_mentor.storage.models import HandLandmarkData
 from motion_mentor.tracking.hand_tracker import draw_hand_skeleton
 
 
+def _tint_rect(
+    frame: np.ndarray,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+    color: tuple,
+    alpha: float,
+) -> None:
+    """Blend a solid color into one rectangle of the frame.
+
+    Blends only the rectangle's pixels instead of copying and blending the whole
+    frame, which at 1280x720 is the difference between a few thousand pixels and
+    two full-frame passes per panel.
+    """
+    fh, fw = frame.shape[:2]
+    x0, y0 = max(0, x), max(0, y)
+    x1, y1 = min(fw, x + w), min(fh, y + h)
+    if x1 <= x0 or y1 <= y0:
+        return
+    roi = frame[y0:y1, x0:x1]
+    cv2.addWeighted(np.full_like(roi, color), alpha, roi, 1.0 - alpha, 0, roi)
+
+
 class HUDOverlay:
     """Renders capture zones, telemetry metrics, countdowns, and recording banners."""
 
@@ -113,9 +137,7 @@ class HUDOverlay:
     ) -> None:
         # Dark glass panel top-left
         px, py, pw, ph = 20, 20, 260, 115
-        overlay = frame.copy()
-        cv2.rectangle(overlay, (px, py), (px + pw, py + ph), (18, 22, 28), -1)
-        cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
+        _tint_rect(frame, px, py, pw, ph, (18, 22, 28), 0.75)
         cv2.rectangle(frame, (px, py), (px + pw, py + ph), (60, 70, 85), 1, cv2.LINE_AA)
 
         # Title
@@ -183,9 +205,7 @@ class HUDOverlay:
         px = (width - pill_w) // 2
         py = 20
 
-        overlay = frame.copy()
-        cv2.rectangle(overlay, (px, py), (px + pill_w, py + pill_h), (20, 15, 30), -1)
-        cv2.addWeighted(overlay, 0.85, frame, 0.15, 0, frame)
+        _tint_rect(frame, px, py, pill_w, pill_h, (20, 15, 30), 0.85)
         cv2.rectangle(frame, (px, py), (px + pill_w, py + pill_h), (0, 0, 240), 2, cv2.LINE_AA)
 
         # Blinking red dot
@@ -227,9 +247,8 @@ class HUDOverlay:
         width: int,
         height: int,
     ) -> None:
-        overlay = frame.copy()
-        cv2.rectangle(overlay, (0, 0), (width, height), (0, 0, 0), -1)
-        cv2.addWeighted(overlay, 0.45, frame, 0.55, 0, frame)
+        # Full-frame dim: blending toward black is just a scale, no copy needed.
+        cv2.addWeighted(frame, 0.55, frame, 0.0, 0, frame)
 
         num_str = str(countdown_sec) if countdown_sec > 0 else "START!"
         # Large glowing number
@@ -281,9 +300,7 @@ class HUDOverlay:
         px = (width - pill_w) // 2
         py = 20
 
-        overlay = frame.copy()
-        cv2.rectangle(overlay, (px, py), (px + pill_w, py + pill_h), (25, 25, 30), -1)
-        cv2.addWeighted(overlay, 0.85, frame, 0.15, 0, frame)
+        _tint_rect(frame, px, py, pill_w, pill_h, (25, 25, 30), 0.85)
         cv2.rectangle(frame, (px, py), (px + pill_w, py + pill_h), (0, 220, 200), 2, cv2.LINE_AA)
 
         mins = int(time_sec // 60)

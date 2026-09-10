@@ -78,10 +78,9 @@ def cmd_test_camera(args: argparse.Namespace) -> None:
                 )
             )
 
-            # Render HUD
-            hud_frame = frame.copy()
+            # Render HUD directly onto the frame; nothing here needs the clean one.
             app.hud.render(
-                hud_frame,
+                frame,
                 hands=hands,
                 fps=rolling_fps,
                 latency_ms=latency_ms,
@@ -90,7 +89,7 @@ def cmd_test_camera(args: argparse.Namespace) -> None:
             )
 
             if not args.headless:
-                cv2.imshow(window_name, hud_frame)
+                cv2.imshow(window_name, frame)
                 key = cv2.waitKey(1) & 0xFF
                 if key in (27, ord("q")):
                     break
@@ -183,7 +182,8 @@ def cmd_record(args: argparse.Namespace) -> None:
                 recorder.record_frame(frame, ts_ms, hands)
 
             # State transitions
-            hud_frame = frame.copy()
+            # HUD draws onto the frame; the recorder already wrote the clean copy above.
+            hud_frame = frame
             countdown_left = 0
             rec_elapsed = 0.0
 

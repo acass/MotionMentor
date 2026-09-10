@@ -62,6 +62,7 @@ class MotionMentorApp:
                 num_hands=t_cfg.get("num_hands", 2),
                 min_detection_confidence=t_cfg.get("min_detection_confidence", 0.5),
                 min_tracking_confidence=t_cfg.get("min_tracking_confidence", 0.5),
+                infer_max_width=t_cfg.get("infer_max_width", 640),
             )
         return self._tracker
 

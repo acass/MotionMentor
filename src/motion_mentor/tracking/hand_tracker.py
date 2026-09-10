@@ -55,9 +55,13 @@ class HandTracker:
         min_detection_confidence: float = 0.5,
         min_tracking_confidence: float = 0.5,
         static_image_mode: bool = False,
+        infer_max_width: int = 640,
     ) -> None:
         self.num_hands = num_hands
         self.static_image_mode = static_image_mode
+        # Frames wider than this are downscaled before inference. Landmarks come
+        # back normalized 0..1, so nothing downstream needs remapping. 0 disables.
+        self.infer_max_width = infer_max_width
         self.mp_hands = mp.solutions.hands.Hands(
             static_image_mode=static_image_mode,
             max_num_hands=num_hands,
@@ -78,8 +82,18 @@ class HandTracker:
         """
         t0 = time.perf_counter()
 
+        # Downscale wide frames before inference
+        infer_frame = bgr_frame
+        if self.infer_max_width and bgr_frame.shape[1] > self.infer_max_width:
+            scale = self.infer_max_width / float(bgr_frame.shape[1])
+            infer_frame = cv2.resize(
+                bgr_frame,
+                (self.infer_max_width, max(1, int(round(bgr_frame.shape[0] * scale)))),
+                interpolation=cv2.INTER_AREA,
+            )
+
         # Convert BGR (OpenCV) to RGB (MediaPipe)
-        rgb_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+        rgb_frame = cv2.cvtColor(infer_frame, cv2.COLOR_BGR2RGB)
         rgb_frame.flags.writeable = False
         results = self.mp_hands.process(rgb_frame)
         rgb_frame.flags.writeable = True

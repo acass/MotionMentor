@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import math
+import threading
 import time
 from typing import List, Optional, Tuple
 
@@ -73,27 +74,63 @@ class CameraCapture:
         self.last_timestamp_ms = 0.0
         self.start_time_ms = 0.0
 
-    def read(self) -> Tuple[bool, Optional[np.ndarray], float]:
-        ret, frame = self.cap.read()
-        ts_ms = time.monotonic() * 1000.0
+        # Grab frames on a background thread, keeping only the newest one.
+        # Per-frame work in the caller (inference plus the GUI event pump) runs
+        # close to the camera's 33 ms period, so a synchronous read() would miss
+        # the next frame on every slow pass and halve the effective rate. The
+        # thread absorbs the wait instead; a caller that falls behind skips
+        # stale frames rather than dropping to a fraction of the camera rate.
+        self._frame_ready = threading.Condition()
+        self._latest: Optional[Tuple[np.ndarray, float]] = None
+        self._captured = 0
+        self._consumed = 0
+        self._stopped = False
+        self._thread = threading.Thread(target=self._pump, daemon=True)
+        self._thread.start()
 
-        if not ret or frame is None:
-            return False, None, ts_ms
+    def _pump(self) -> None:
+        while True:
+            ret, frame = self.cap.read()
+            ts_ms = time.monotonic() * 1000.0
+            with self._frame_ready:
+                if self._stopped:
+                    return
+                if not ret or frame is None:
+                    self._stopped = True
+                    self._frame_ready.notify_all()
+                    return
+                self._latest = (frame, ts_ms)
+                self._captured += 1
+                self._frame_ready.notify_all()
+
+    def read(self, timeout_sec: float = 2.0) -> Tuple[bool, Optional[np.ndarray], float]:
+        """Return the newest frame, waiting for one the caller has not seen yet."""
+        with self._frame_ready:
+            self._frame_ready.wait_for(
+                lambda: self._stopped or self._captured > self._consumed,
+                timeout=timeout_sec,
+            )
+            if self._captured <= self._consumed or self._latest is None:
+                return False, None, time.monotonic() * 1000.0
+
+            frame, ts_ms = self._latest
+            # Frames the camera delivered while the caller was busy are skipped,
+            # never re-processed. That skip count is the honest drop metric.
+            self.dropped_frame_count += self._captured - self._consumed - 1
+            self._consumed = self._captured
 
         if self.frame_count == 0:
             self.start_time_ms = ts_ms
-        else:
-            delta_ms = ts_ms - self.last_timestamp_ms
-            # If delta is more than 1.8x expected frame interval, count dropped frame
-            if delta_ms > (self.expected_frame_interval_ms * 1.8):
-                dropped = int(delta_ms / self.expected_frame_interval_ms) - 1
-                self.dropped_frame_count += max(1, dropped)
-
         self.last_timestamp_ms = ts_ms
         self.frame_count += 1
         return True, frame, ts_ms
 
     def release(self) -> None:
+        with self._frame_ready:
+            self._stopped = True
+            self._frame_ready.notify_all()
+        if self._thread.is_alive():
+            self._thread.join(timeout=1.0)
         if self.cap and self.cap.isOpened():
             self.cap.release()
 

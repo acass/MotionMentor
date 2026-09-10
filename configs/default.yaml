@@ -14,6 +14,7 @@ tracking:
   min_detection_confidence: 0.5
   min_presence_confidence: 0.5
   min_tracking_confidence: 0.5
+  infer_max_width: 640 # downscale before inference; 0 = full resolution
 
 storage:
   database_path: "data/motion_mentor.db"
