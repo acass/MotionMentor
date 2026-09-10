@@ -15,6 +15,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from motion_mentor.app import MotionMentorApp
+from motion_mentor.purge import apply_purge, backup_database, collect_files, collect_manifest
+from motion_mentor.reporting.quality import QualityEvaluator
 from motion_mentor.storage.files import load_features_parquet, load_landmarks_parquet
 from motion_mentor.storage.models import ReferenceProfile, Session
 
@@ -46,6 +48,25 @@ def favicon() -> Response:
 _mentor_app: Optional[MotionMentorApp] = None
 
 GENERATED_CAMERA_IDS = frozenset({"synthetic", "canonical-demonstration"})
+
+# An uploaded browser recording is processed offline, frame by frame, so the
+# "effective FPS" derived from its timestamps is just the webcam's capture rate
+# re-stated - it says nothing about live pipeline throughput, which is what the
+# 24 FPS live-capture gate exists to protect. Judging uploads by that gate fails
+# every browser take, because MediaRecorder webcam capture runs at 15-30 FPS.
+# The floor below still rejects a recording too coarse for motion analysis.
+# ponytail: fixed floor; make it per-activity if some activity needs finer timing.
+BROWSER_UPLOAD_MIN_FPS = 12.0
+# Same reasoning for hand coverage: a browser take starts and ends with the hand
+# entering and leaving frame, so a real 5-second take lands around 80-85%. The
+# 90% gate exists for a controlled lab capture and fails every browser take,
+# which leaves the expert with no reference and the trainee with no assessment.
+# ponytail: fixed floor; make it per-activity if some activity needs stricter.
+BROWSER_UPLOAD_MIN_COVERAGE_PCT = 70.0
+BROWSER_UPLOAD_QUALITY_EVALUATOR = QualityEvaluator(
+    min_hand_coverage_pct=BROWSER_UPLOAD_MIN_COVERAGE_PCT,
+    min_median_fps=BROWSER_UPLOAD_MIN_FPS,
+)
 
 
 class CaptureKind(str, Enum):
@@ -154,6 +175,37 @@ def list_sessions(
     mentor = get_mentor_app()
     sessions = mentor.db.list_sessions(activity_id=activity_id, role=role)
     return [s.model_dump() for s in sessions]
+
+
+@app.delete("/api/sessions/purge")
+def purge_sessions(
+    role: Literal["trainee", "expert"] = Query("trainee", description="Which captures to clear"),
+    activity: Optional[str] = Query(None, description="Limit to one activity id or name"),
+    apply: bool = Query(False, description="Actually delete; otherwise preview only"),
+) -> Dict[str, Any]:
+    """Preview or delete every session of one role, plus what was derived from it."""
+    mentor = get_mentor_app()
+    conn = mentor.db.get_connection()
+    try:
+        manifest = collect_manifest(conn, role, activity)
+        files = collect_files(manifest, mentor.db.db_path.parent)
+        preview = {
+            "applied": False,
+            "role": role,
+            "sessions": manifest["sessions"],
+            "references": manifest["references"],
+            "assessments": manifest["assessments"],
+            "files": [str(p) for p in files],
+        }
+        if not apply:
+            return preview
+
+        backup = backup_database(mentor.db.db_path)
+        counts = apply_purge(conn, manifest, files)
+        logger.info("purged %s sessions: %s (backup at %s)", role, counts, backup)
+        return {**preview, "applied": True, "backup": str(backup), "deleted": counts}
+    finally:
+        conn.close()
 
 
 @app.get("/api/sessions/{session_id}")
@@ -321,7 +373,9 @@ class RecordUploadRequest(BaseModel):
 class SyntheticRecordRequest(BaseModel):
     activity_id: Optional[str] = "reach-and-pinch-001"
     duration: Optional[float] = 5.0
-    role: Literal["expert", "trainee"] = "trainee"
+    # Synthetic takes are drawn, not captured, so they may never stand in for an
+    # expert demonstration. Rejected with a 422 by FastAPI.
+    role: Literal["trainee"] = "trainee"
     participant_id: Optional[str] = "local-user"
 
 
@@ -416,7 +470,7 @@ def record_upload(req: RecordUploadRequest) -> Dict[str, Any]:
     lm_path = lm_dir / f"{session_id}.parquet"
     save_landmarks_parquet(records, lm_path)
 
-    summary = mentor.quality_evaluator.evaluate(
+    summary = BROWSER_UPLOAD_QUALITY_EVALUATOR.evaluate(
         records=records,
         latencies_ms=latencies,
         dropped_frames=0,
@@ -474,6 +528,10 @@ def rebuild_reference_for_activity(
     expert_sessions = [
         session for session in mentor.db.list_sessions(activity_id=activity_id, role="expert")
         if session.quality_summary and session.quality_summary.meets_criteria
+        # A reference is what the trainee is measured against, so only real
+        # camera captures may back one. This is the single choke point every
+        # reference build routes through.
+        and get_capture_kind(session) is not CaptureKind.GENERATED
         and (
             anchor_session is None
             or get_capture_kind(session) == get_capture_kind(anchor_session)

@@ -51,6 +51,8 @@ const dom = {
   referenceSelect: document.getElementById('referenceSelect'),
   btnRecompare: document.getElementById('btnRecompare'),
   btnToggleHistory: document.getElementById('btnToggleHistory'),
+  btnPurgeAttempts: document.getElementById('btnPurgeAttempts'),
+  btnPurgeExperts: document.getElementById('btnPurgeExperts'),
   historyModal: document.getElementById('historyModal'),
   btnCloseHistory: document.getElementById('btnCloseHistory'),
   historyTableBody: document.getElementById('historyTableBody'),
@@ -157,6 +159,13 @@ function initEventListeners() {
   dom.btnToggleHistory.addEventListener('click', () => dom.historyModal.classList.remove('hidden'));
   dom.btnCloseHistory.addEventListener('click', () => dom.historyModal.classList.add('hidden'));
 
+  if (dom.btnPurgeAttempts) {
+    dom.btnPurgeAttempts.addEventListener('click', () => purgeSessions('trainee'));
+  }
+  if (dom.btnPurgeExperts) {
+    dom.btnPurgeExperts.addEventListener('click', () => purgeSessions('expert'));
+  }
+
   // Live Camera & Record Modal
   if (dom.btnOpenRecordModal) {
     dom.btnOpenRecordModal.addEventListener('click', openRecordModal);
@@ -221,6 +230,59 @@ async function loadInitialData() {
   } catch (err) {
     console.error('Failed to load initial data:', err);
   }
+}
+
+// Preview a purge, confirm the counts with the user, then delete.
+async function purgeSessions(role) {
+  const isExpert = role === 'expert';
+  const btn = isExpert ? dom.btnPurgeExperts : dom.btnPurgeAttempts;
+  const noun = isExpert ? 'expert capture' : 'trainee attempt';
+  const original = btn.cloneNode(true); // icon + label, restored when we are done
+  btn.disabled = true;
+  try {
+    btn.textContent = 'Checking...';
+    const preview = await purgeRequest(role, false);
+
+    if (preview.sessions.length === 0) {
+      alert(`No ${noun}s to delete.`);
+      return;
+    }
+
+    const lines = [
+      `Permanently delete ${preview.sessions.length} ${noun}(s), ` +
+      `${preview.references.length} reference profile(s), ` +
+      `${preview.assessments.length} assessment(s) and ${preview.files.length} media file(s)?`,
+      '',
+      isExpert
+        ? 'Every reference profile built from these captures goes too, so comparison will not work until a new expert capture is recorded.'
+        : 'Expert captures and references are not touched.',
+      'The database is backed up first.',
+    ];
+    if (!confirm(lines.join('\n'))) return;
+
+    btn.textContent = 'Deleting...';
+    const result = await purgeRequest(role, true);
+
+    state.currentAttempt = null;
+    if (isExpert) state.currentReference = null;
+    await loadInitialData();
+    alert(`Deleted ${result.deleted.sessions} ${noun}(s). Backup: ${result.backup}`);
+  } catch (err) {
+    console.error('Purge failed:', err);
+    alert(`Purge failed: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.replaceChildren(...original.childNodes);
+  }
+}
+
+async function purgeRequest(role, apply) {
+  const res = await fetch(`/api/sessions/purge?role=${role}&apply=${apply}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || res.statusText);
+  }
+  return res.json();
 }
 
 function populateActivityDropdown() {
@@ -1071,17 +1133,28 @@ async function startLiveRecording() {
 
         await loadInitialData();
 
-        const scoreMsg = captureRole === 'expert'
-          ? (data.reference
-            ? `Reference rebuilt from ${data.reference.total_demonstrations} expert take${data.reference.total_demonstrations === 1 ? '' : 's'}`
-            : 'Expert take saved. It did not meet the quality threshold for a reference rebuild')
-          : (data.assessment?.overall_score
-            ? `Score: ${data.assessment.overall_score.toFixed(1)} / 100 (${data.assessment.interpretation_band})`
-            : 'Processing complete');
+        // A capture that produced no reference or no assessment is not a success,
+        // so say what blocked it instead of showing a checkmark over an empty
+        // evaluation panel.
+        const reasons = data.session?.quality_summary?.status_reasons || [];
+        const reasonText = reasons.length ? ` Reasons: ${reasons.join(' ')}` : '';
+        const ok = captureRole === 'expert' ? Boolean(data.reference) : Boolean(data.assessment);
+
+        let message;
+        if (captureRole === 'expert') {
+          message = ok
+            ? `✅ New Expert Take Captured! Reference rebuilt from ${data.reference.total_demonstrations} expert take${data.reference.total_demonstrations === 1 ? '' : 's'}.`
+            : `⚠️ Expert take saved, but no reference was built, so trainee attempts cannot be scored yet.${reasonText} Re-record with your hand fully visible for the whole take.`;
+        } else if (ok) {
+          message = `✅ New Attempt Captured! Score: ${data.assessment.overall_score.toFixed(1)} / 100 (${data.assessment.interpretation_band}). Review synchronized ghost overlay below.`;
+        } else if (state.references.length === 0) {
+          message = `⚠️ Attempt saved, but there is no expert reference to score against, so the evaluation area stays empty. Record a quality-passing expert take first.${reasonText}`;
+        } else {
+          message = `⚠️ Attempt saved, but it could not be scored.${reasonText}`;
+        }
+
         dom.criticalAlert.classList.remove('hidden');
-        dom.criticalText.textContent = captureRole === 'expert'
-          ? `✅ New Expert Take Captured! ${scoreMsg}.`
-          : `✅ New Attempt Captured! ${scoreMsg}. Review synchronized ghost overlay below.`;
+        dom.criticalText.textContent = message;
       } catch (err) {
         console.error('Record upload error:', err);
         dom.recordMsgArea.textContent = `Upload failed: ${err.message}`;
@@ -1097,7 +1170,10 @@ async function startLiveRecording() {
 }
 
 async function startSyntheticRecording() {
-  const captureRole = dom.recordRole.value;
+  // A synthetic take is drawn, not captured, so it can only ever be a trainee
+  // attempt. The role select is shared with live recording, where expert is valid.
+  const requestedRole = dom.recordRole.value;
+  const captureRole = 'trainee';
   dom.btnStartLiveRecord.disabled = true;
   dom.btnSyntheticRecord.disabled = true;
   dom.recordMsgArea.innerHTML = `<span class="status-dot cyan-dot"></span> Generating synthetic ${captureRole} take...`;
@@ -1122,11 +1198,9 @@ async function startSyntheticRecording() {
     await loadInitialData();
 
     dom.criticalAlert.classList.remove('hidden');
-    dom.criticalText.textContent = captureRole === 'expert'
-      ? (data.reference
-        ? `✅ Synthetic Expert Take Captured! Reference rebuilt from ${data.reference.total_demonstrations} expert take${data.reference.total_demonstrations === 1 ? '' : 's'}.`
-        : '✅ Synthetic Expert Take Captured, but it did not meet the quality threshold for a reference rebuild.')
-      : '✅ Synthetic Attempt Loaded! Ready for playback review.';
+    dom.criticalText.textContent = requestedRole === 'expert'
+      ? 'Synthetic Attempt Loaded. Note: synthetic takes are generated, not recorded, so they cannot serve as an expert reference — record a real capture for that.'
+      : 'Synthetic Attempt Loaded! Ready for playback review.';
   } catch (err) {
     console.error('Synthetic take failed:', err);
     dom.recordMsgArea.textContent = `Synthetic generation failed: ${err.message}`;

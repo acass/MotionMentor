@@ -391,3 +391,31 @@ def test_trainee_auto_comparison_prefers_recorded_reference(
     assert reference is None
     assert assessment is not None
     assert assessment["reference_profile_id"] == recorded_reference.reference_id
+
+
+def test_generated_expert_capture_never_backs_a_reference(workflow_context) -> None:
+    """A drawn or injected take must not become the standard a trainee is scored against."""
+    mentor, activity = workflow_context
+
+    save_expert(
+        mentor,
+        activity,
+        session_id="recorded-expert",
+        camera_id="browser-webcam",
+        passes=True,
+        started_at="2026-09-09T10:00:00+00:00",
+    )
+    generated_capture = save_expert(
+        mentor,
+        activity,
+        session_id="generated-expert",
+        camera_id="canonical-demonstration",
+        passes=True,
+        started_at="2026-09-09T11:00:00+00:00",
+    )
+
+    assessment, reference = process_completed_session(mentor, generated_capture)
+
+    assert assessment is None
+    assert reference is None
+    assert mentor.db.list_reference_profiles() == []
