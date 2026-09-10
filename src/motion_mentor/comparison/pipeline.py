@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 import pandas as pd
 from rich.console import Console
@@ -12,8 +13,12 @@ from rich.table import Table
 from motion_mentor.app import MotionMentorApp
 from motion_mentor.comparison.dtw import align_sequences, constrained_dtw
 from motion_mentor.comparison.feedback import FeedbackGenerator
-from motion_mentor.comparison.reference import ReferenceProfileBuilder
-from motion_mentor.comparison.scoring import ScoringEngine, determine_interpretation_band
+from motion_mentor.comparison.reference import CORE_ALIGNMENT_FEATURES, alignment_matrix
+from motion_mentor.comparison.scoring import (
+    ScoringEngine,
+    determine_interpretation_band,
+    scored_frame_fraction,
+)
 from motion_mentor.processing.features import extract_session_features_df
 from motion_mentor.processing.normalization import normalize_session_records
 from motion_mentor.processing.smoothing import smooth_landmark_records
@@ -22,7 +27,13 @@ from motion_mentor.storage.files import (
     load_landmarks_parquet,
     save_features_parquet,
 )
-from motion_mentor.storage.models import AssessmentResult, Session
+from motion_mentor.storage.models import (
+    Activity,
+    AssessmentResult,
+    ComponentScores,
+    QualitySummary,
+    Session,
+)
 
 console = Console()
 
@@ -47,6 +58,71 @@ def prepare_session_features(app: MotionMentorApp, session: Session) -> pd.DataF
     return df_features
 
 
+class EnvelopeScore(NamedTuple):
+    """One attempt measured against one reference envelope."""
+
+    component_scores: ComponentScores
+    overall_score: float
+    critical_failures: List[str]
+    per_feature_z: Dict[str, float]
+    aligned_ref_df: pd.DataFrame
+    aligned_trainee_df: pd.DataFrame
+    warping_path: List[Tuple[int, int]]
+    dtw_distance: float
+    scored_fraction: float
+
+
+def score_attempt_against_envelope(
+    activity: Activity,
+    ref_df: pd.DataFrame,
+    trainee_df: pd.DataFrame,
+    trainee_duration_sec: float,
+    reference_duration_sec: float,
+    trainee_quality: Optional[QualitySummary] = None,
+) -> EnvelopeScore:
+    """
+    Align an attempt to a reference envelope and score it.
+
+    Separated from compare_attempt_to_reference so calibration work can score against a
+    throwaway envelope without writing profiles or assessments to the database.
+    """
+    align_cols = CORE_ALIGNMENT_FEATURES
+    ref_align_cols = [f"{c}_mean" for c in align_cols if f"{c}_mean" in ref_df.columns]
+    trainee_align_cols = [c for c in align_cols if c in trainee_df.columns]
+
+    # Untracked frames are NaN. Bridge them for alignment only; the scoring below reads
+    # the original columns, so a gap stays a gap where it matters.
+    seq_ref = alignment_matrix(ref_df, ref_align_cols)
+    seq_trainee = alignment_matrix(trainee_df, trainee_align_cols)
+
+    dtw_dist, warping_path, _ = constrained_dtw(seq_ref, seq_trainee, window_ratio=0.25)
+
+    aligned_ref, aligned_trainee = align_sequences(ref_df.to_numpy(), trainee_df.to_numpy(), warping_path)
+    aligned_ref_df = pd.DataFrame(aligned_ref, columns=ref_df.columns)
+    aligned_trainee_df = pd.DataFrame(aligned_trainee, columns=trainee_df.columns)
+
+    comp_scores, overall_score, critical_fails, per_feature_z = ScoringEngine(activity).evaluate_attempt(
+        aligned_ref_df=aligned_ref_df,
+        aligned_trainee_df=aligned_trainee_df,
+        trainee_duration_sec=trainee_duration_sec,
+        reference_duration_sec=reference_duration_sec,
+        warping_path=warping_path,
+        trainee_quality=trainee_quality,
+    )
+
+    return EnvelopeScore(
+        component_scores=comp_scores,
+        overall_score=overall_score,
+        critical_failures=critical_fails,
+        per_feature_z=per_feature_z,
+        aligned_ref_df=aligned_ref_df,
+        aligned_trainee_df=aligned_trainee_df,
+        warping_path=warping_path,
+        dtw_distance=dtw_dist,
+        scored_fraction=scored_frame_fraction(aligned_ref_df, aligned_trainee_df),
+    )
+
+
 def compare_attempt_to_reference(
     app: MotionMentorApp,
     attempt_session: Session,
@@ -59,62 +135,41 @@ def compare_attempt_to_reference(
     ref_profile = app.db.get_reference_profile(reference_session_or_profile_id)
     ref_df: pd.DataFrame
 
-    if ref_profile and Path(ref_profile.profile_path).exists():
-        ref_df = pd.read_parquet(ref_profile.profile_path)
-        ref_id = ref_profile.reference_id
-        ref_duration = ref_profile.duration_mean_sec
-    else:
-        # Check if argument is a single expert session ID
-        ref_session = app.db.get_session(reference_session_or_profile_id)
-        if not ref_session:
-            # Fallback to latest reference profile for this activity
-            latest_ref = app.db.get_latest_reference_profile(activity.activity_id)
-            if latest_ref and Path(latest_ref.profile_path).exists():
-                ref_profile = latest_ref
-                ref_df = pd.read_parquet(ref_profile.profile_path)
-                ref_id = ref_profile.reference_id
-                ref_duration = ref_profile.duration_mean_sec
-            else:
-                raise ValueError(f"Could not find reference or expert session: {reference_session_or_profile_id}")
-        else:
-            expert_df = prepare_session_features(app, ref_session)
-            builder = ReferenceProfileBuilder(activity)
-            ref_profile, ref_df = builder.build_profile([(ref_session, expert_df)])
-            app.db.save_reference_profile(ref_profile)
-            ref_id = ref_profile.reference_id
-            ref_duration = ref_session.duration_seconds
+    if not (ref_profile and Path(ref_profile.profile_path).exists()):
+        # Fall back to the latest profile for this activity. A reference is a deliberate
+        # artifact: nothing here builds one on the fly. A single-take profile built as a
+        # side effect of a comparison has no measured tolerance at all, only the floors,
+        # and it looks identical to a real one in the UI.
+        ref_profile = app.db.get_latest_reference_profile(activity.activity_id)
+        if not (ref_profile and Path(ref_profile.profile_path).exists()):
+            raise ValueError(
+                f"No reference profile found for activity '{activity.activity_id}' "
+                f"(looked up '{reference_session_or_profile_id}'). Build one first with: "
+                f"motion-mentor build-reference --activity {activity.activity_id}"
+            )
+
+    ref_df = pd.read_parquet(ref_profile.profile_path)
+    ref_id = ref_profile.reference_id
+    ref_duration = ref_profile.duration_mean_sec
 
     # 2. Prepare Trainee Features
     trainee_df = prepare_session_features(app, attempt_session)
 
-    # 3. Constrained DTW Alignment
-    align_cols = [
-        "index_mcp", "index_pip", "thumb_mcp", "thumb_ip",
-        "pinch_distance", "palm_pitch", "palm_roll", "wrist_x", "wrist_y",
-    ]
-    ref_align_cols = [f"{c}_mean" for c in align_cols if f"{c}_mean" in ref_df.columns]
-    trainee_align_cols = [c for c in align_cols if c in trainee_df.columns]
-
-    seq_ref = ref_df[ref_align_cols].to_numpy()
-    seq_trainee = trainee_df[trainee_align_cols].to_numpy()
-
-    dtw_dist, warping_path, _ = constrained_dtw(seq_ref, seq_trainee, window_ratio=0.25)
-
-    # Resample along warping path
-    aligned_ref, aligned_trainee = align_sequences(ref_df.to_numpy(), trainee_df.to_numpy(), warping_path)
-    aligned_ref_df = pd.DataFrame(aligned_ref, columns=ref_df.columns)
-    aligned_trainee_df = pd.DataFrame(aligned_trainee, columns=trainee_df.columns)
-
-    # 4. Component Scoring
-    scoring_engine = ScoringEngine(activity)
-    comp_scores, overall_score, critical_fails, per_feature_z = scoring_engine.evaluate_attempt(
-        aligned_ref_df=aligned_ref_df,
-        aligned_trainee_df=aligned_trainee_df,
+    # 3 & 4. Align and score
+    result = score_attempt_against_envelope(
+        activity=activity,
+        ref_df=ref_df,
+        trainee_df=trainee_df,
         trainee_duration_sec=attempt_session.duration_seconds,
         reference_duration_sec=ref_duration,
-        warping_path=warping_path,
         trainee_quality=attempt_session.quality_summary,
     )
+    aligned_ref_df = result.aligned_ref_df
+    aligned_trainee_df = result.aligned_trainee_df
+    comp_scores = result.component_scores
+    overall_score = result.overall_score
+    critical_fails = result.critical_failures
+    per_feature_z = result.per_feature_z
 
     # 5. Coaching Feedback
     feedback_gen = FeedbackGenerator()
@@ -130,6 +185,14 @@ def compare_attempt_to_reference(
     reliability = "high"
     if attempt_session.quality_summary and attempt_session.quality_summary.detection_coverage_pct < 85.0:
         reliability = "low"
+    # A score built from a handful of usable frames is not a confident score, however
+    # good the number looks.
+    if result.scored_fraction < 0.85:
+        reliability = "low"
+        console.print(
+            f"[yellow]Only {result.scored_fraction * 100:.0f}% of aligned frames were scorable "
+            f"(missing tracking or thin reference support).[/yellow]"
+        )
 
     assessment = AssessmentResult(
         attempt_session_id=attempt_session.session_id,

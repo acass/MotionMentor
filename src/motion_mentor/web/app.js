@@ -88,6 +88,7 @@ const dom = {
   interpretationBandPill: document.getElementById('interpretationBandPill'),
   reliabilityPill: document.getElementById('reliabilityPill'),
   coverageVal: document.getElementById('coverageVal'),
+  demonstrationsVal: document.getElementById('demonstrationsVal'),
   criticalAlert: document.getElementById('criticalAlert'),
   criticalText: document.getElementById('criticalText'),
   componentsList: document.getElementById('componentsList'),
@@ -401,6 +402,8 @@ function clearAttemptData() {
   if (state.isPlaying) togglePlayPause();
   clearVideo(dom.traineeVideo, dom.traineePlaceholder, 'No Trainee Attempt Available');
   dom.coverageVal.textContent = '--';
+  dom.demonstrationsVal.textContent = '--';
+  dom.demonstrationsVal.className = 'meta-val';
   dom.currentTimeDisplay.textContent = formatTime(0);
   dom.totalTimeDisplay.textContent = formatTime(state.duration);
   dom.masterScrubber.value = 0;
@@ -573,6 +576,22 @@ function renderScorecard(assessment) {
   const rel = (assessment.reliability || 'HIGH').toUpperCase();
   dom.reliabilityPill.textContent = rel;
   dom.reliabilityPill.className = `reliability-pill ${rel === 'HIGH' ? 'rel-high' : 'rel-low'}`;
+
+  // How many expert takes stand behind this score. A reference built from one take has
+  // no measured tolerance at all, only the noise floors, and every score against it is
+  // a comparison to constants.
+  const usedRef = state.references.find(r => r.reference_id === assessment.reference_profile_id);
+  const takes = usedRef ? usedRef.total_demonstrations : null;
+  if (takes === null) {
+    dom.demonstrationsVal.textContent = '--';
+    dom.demonstrationsVal.className = 'meta-val';
+  } else {
+    dom.demonstrationsVal.textContent = `${takes} expert take${takes === 1 ? '' : 's'}`;
+    dom.demonstrationsVal.className = takes < 5 ? 'meta-val meta-thin' : 'meta-val';
+    dom.demonstrationsVal.title = takes < 5
+      ? 'Too few takes to measure the expert\'s natural variability. Scores are being compared against fixed tolerance floors.'
+      : '';
+  }
 
   // Critical alert
   if (assessment.critical_failures && assessment.critical_failures.length > 0) {

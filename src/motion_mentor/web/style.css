@@ -1259,3 +1259,10 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Reference built from too few takes to have a measured tolerance envelope. */
+.meta-val.meta-thin {
+  color: var(--color-warning);
+  font-weight: 600;
+  cursor: help;
+}

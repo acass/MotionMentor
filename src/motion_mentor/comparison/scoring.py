@@ -31,10 +31,50 @@ def compute_component_zscore(
     ref_mean: np.ndarray,       # shape (K,)
     ref_std: np.ndarray,        # shape (K,)
 ) -> float:
-    """Compute average Z-score error for a feature channel."""
+    """
+    Compute average Z-score error for a feature channel.
+
+    Frames where the trainee was untracked, or where the envelope has too few expert
+    takes behind it, arrive as NaN. Those carry no evidence either way, so they are
+    skipped rather than scored as a perfect or a catastrophic match. Returns NaN when
+    a channel has no usable frame at all, and callers drop it.
+    """
+    # Alignment round-trips the frames through a mixed-dtype array, so these can arrive
+    # as object arrays that np.isfinite refuses.
+    trainee_vals = np.asarray(trainee_vals, dtype=float)
+    ref_mean = np.asarray(ref_mean, dtype=float)
+    ref_std = np.asarray(ref_std, dtype=float)
+
     errors = np.abs(trainee_vals - ref_mean)
     z_scores = errors / np.maximum(ref_std, 1e-4)
-    return float(np.mean(z_scores))
+    usable = np.isfinite(z_scores)
+    if not usable.any():
+        return float("nan")
+    return float(np.mean(z_scores[usable]))
+
+
+def mean_finite_z(z_list: List[float], default: float = 1.0) -> float:
+    """Average the channels that produced a usable Z-score, ignoring the rest."""
+    finite = [z for z in z_list if math.isfinite(z)]
+    return float(np.mean(finite)) if finite else default
+
+
+def scored_frame_fraction(aligned_ref_df: pd.DataFrame, aligned_trainee_df: pd.DataFrame) -> float:
+    """
+    Fraction of aligned frames that actually contributed to the score.
+
+    A comparison can look confident while most of its frames were skipped for missing
+    data. This is what tells the difference.
+    """
+    if len(aligned_ref_df) == 0:
+        return 0.0
+    ref_cols = [f"{f}_mean" for f in JOINT_ANGLE_FEATURES if f"{f}_mean" in aligned_ref_df.columns]
+    trainee_cols = [f for f in JOINT_ANGLE_FEATURES if f in aligned_trainee_df.columns]
+    if not ref_cols or not trainee_cols:
+        return 0.0
+    ref_ok = aligned_ref_df[ref_cols].notna().all(axis=1).to_numpy()
+    trainee_ok = aligned_trainee_df[trainee_cols].notna().all(axis=1).to_numpy()
+    return float(np.mean(ref_ok & trainee_ok))
 
 
 def zscore_to_score_100(mean_z: float, decay_factor: float = 0.35) -> float:
@@ -77,10 +117,11 @@ class ScoringEngine:
                     aligned_ref_df[f"{feat}_mean"].to_numpy(),
                     aligned_ref_df[f"{feat}_std"].to_numpy(),
                 )
-                per_feature_z[feat] = z
+                if math.isfinite(z):
+                    per_feature_z[feat] = z
                 pose_z_list.append(z)
 
-        mean_pose_z = float(np.mean(pose_z_list)) if pose_z_list else 1.0
+        mean_pose_z = mean_finite_z(pose_z_list)
         score_pose = zscore_to_score_100(mean_pose_z)
 
         # 2. Trajectory Score (Wrist Path)
@@ -92,10 +133,11 @@ class ScoringEngine:
                     aligned_ref_df[f"{feat}_mean"].to_numpy(),
                     aligned_ref_df[f"{feat}_std"].to_numpy(),
                 )
-                per_feature_z[feat] = z
+                if math.isfinite(z):
+                    per_feature_z[feat] = z
                 traj_z_list.append(z)
 
-        mean_traj_z = float(np.mean(traj_z_list)) if traj_z_list else 1.0
+        mean_traj_z = mean_finite_z(traj_z_list)
         score_trajectory = zscore_to_score_100(mean_traj_z)
 
         # 3. Orientation Score (Palm & Wrist Angles)
@@ -107,10 +149,11 @@ class ScoringEngine:
                     aligned_ref_df[f"{feat}_mean"].to_numpy(),
                     aligned_ref_df[f"{feat}_std"].to_numpy(),
                 )
-                per_feature_z[feat] = z
+                if math.isfinite(z):
+                    per_feature_z[feat] = z
                 orient_z_list.append(z)
 
-        mean_orient_z = float(np.mean(orient_z_list)) if orient_z_list else 1.0
+        mean_orient_z = mean_finite_z(orient_z_list)
         score_orientation = zscore_to_score_100(mean_orient_z)
 
         # 4. Timing Score
@@ -141,10 +184,11 @@ class ScoringEngine:
                     aligned_ref_df[f"{feat}_mean"].to_numpy(),
                     aligned_ref_df[f"{feat}_std"].to_numpy(),
                 )
-                per_feature_z[feat] = z
+                if math.isfinite(z):
+                    per_feature_z[feat] = z
                 smooth_z_list.append(z)
 
-        mean_smooth_z = float(np.mean(smooth_z_list)) if smooth_z_list else 1.0
+        mean_smooth_z = mean_finite_z(smooth_z_list)
         score_smoothness = zscore_to_score_100(mean_smooth_z, decay_factor=0.30)
 
         # 6. Sequence & Checkpoints Score
