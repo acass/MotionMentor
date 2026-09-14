@@ -72,13 +72,16 @@ class FeedbackGenerator:
             if ref_mean_col not in aligned_ref_df.columns or feat not in aligned_trainee_df.columns:
                 continue
 
-            ref_vals = aligned_ref_df[ref_mean_col].to_numpy()
-            trainee_vals = aligned_trainee_df[feat].to_numpy()
+            # Alignment can hand back object-dtype columns; same cast as scoring.
+            ref_vals = np.asarray(aligned_ref_df[ref_mean_col].to_numpy(), dtype=float)
+            trainee_vals = np.asarray(aligned_trainee_df[feat].to_numpy(), dtype=float)
             time_ms = aligned_trainee_df["timestamp_ms"].to_numpy()
 
             # Find peak error step
             abs_errors = np.abs(trainee_vals - ref_vals)
-            peak_idx = int(np.argmax(abs_errors))
+            if not np.isfinite(abs_errors).any():
+                continue  # feature undefined on every aligned frame; no measurable deviation
+            peak_idx = int(np.nanargmax(abs_errors))
             peak_time_sec = round(float((time_ms[peak_idx] - time_ms[0]) / 1000.0), 1)
             raw_diff = float(trainee_vals[peak_idx] - ref_vals[peak_idx])
 

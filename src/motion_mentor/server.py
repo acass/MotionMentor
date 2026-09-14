@@ -229,7 +229,11 @@ def get_session_landmarks(session_id: str) -> List[Dict[str, Any]]:
     if not session.landmark_path or not Path(session.landmark_path).exists():
         raise HTTPException(status_code=404, detail="Landmark file missing for session")
 
-    records = load_landmarks_parquet(session.landmark_path)
+    try:
+        records = load_landmarks_parquet(session.landmark_path)
+    except Exception as e:  # pyarrow raises several types for a corrupt file
+        logger.warning("Unreadable landmark file %s: %s", session.landmark_path, e)
+        raise HTTPException(status_code=422, detail="Landmark file unreadable for session")
     output = []
     for r in records:
         hands_data = []

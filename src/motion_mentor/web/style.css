@@ -15,6 +15,7 @@
   --color-success: #10b981;
   --color-warning: #fbbf24;
   --color-danger: #ef4444;
+  --color-danger-text: #f87171; /* 4.5:1+ on card backgrounds (WCAG AA) */
 
   --text-primary: #f8fafc;
   --text-secondary: #a9b6ca;
@@ -738,7 +739,7 @@ body {
 
 .band-review {
   background: rgba(239, 68, 68, 0.15);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
@@ -780,7 +781,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   font-size: 0.75rem;
 }
 

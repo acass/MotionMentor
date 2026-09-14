@@ -106,3 +106,21 @@ def test_critical_failure_priority(base_dataframes):
     assert items[0].component == "Sequence"
     assert items[0].severity == "high"
     assert "Critical checkpoint failed: 90° Wrist Rotation" in items[0].message
+
+
+def test_all_nan_feature_yields_no_nan_message(base_dataframes):
+    ref_df, trainee_df = base_dataframes
+    trainee_df["palm_pitch"] = np.nan
+    # Alignment round-trips through a mixed-dtype array, so columns arrive as object
+    trainee_df["palm_pitch"] = trainee_df["palm_pitch"].astype(object)
+    generator = FeedbackGenerator()
+    scores = ComponentScores(
+        pose=60.0, trajectory=60.0, orientation=10.0, timing=60.0, smoothness=60.0, sequence=100.0
+    )
+    items = generator.generate_feedback(
+        component_scores=scores,
+        per_feature_z={"palm_pitch": 3.0},
+        aligned_ref_df=ref_df,
+        aligned_trainee_df=trainee_df,
+    )
+    assert all("nan" not in item.message for item in items)

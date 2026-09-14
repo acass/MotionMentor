@@ -316,7 +316,7 @@ function populateReferenceDropdown() {
     const representativeId = representative?.session_id
       ? representative.session_id.substring(0, 8)
       : 'unknown';
-    opt.textContent = `${sourceLabel} · ${representativeId} · ${r.total_demonstrations} take${r.total_demonstrations > 1 ? 's' : ''} · ${r.duration_mean_sec}s`;
+    opt.textContent = `${sourceLabel} · ${r.reference_id.substring(0, 8)}/${representativeId} · ${r.total_demonstrations} take${r.total_demonstrations > 1 ? 's' : ''} · ${r.duration_mean_sec}s`;
     dom.referenceSelect.appendChild(opt);
   });
   state.currentReference = activityReferences[0] || null;
